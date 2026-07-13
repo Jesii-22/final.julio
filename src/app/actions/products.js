@@ -7,31 +7,77 @@ import { connectDB } from "@/lib/mongodb";
 import "@/models/Category";
 import Product from "@/models/Product";
 
+function parseCustomizations(formData) {
+  const customizationsValue = formData.get("customizations");
+
+  if (!customizationsValue) {
+    return [];
+  }
+
+  try {
+    const parsedCustomizations = JSON.parse(customizationsValue);
+
+    if (!Array.isArray(parsedCustomizations)) {
+      return [];
+    }
+
+    return parsedCustomizations
+      .map((customization) => ({
+        name: String(customization.name || "").trim(),
+        options: Array.isArray(customization.options)
+          ? customization.options
+              .map((option) => String(option).trim())
+              .filter(Boolean)
+          : [],
+      }))
+      .filter(
+        (customization) =>
+          customization.name && customization.options.length > 0
+      );
+  } catch {
+    return [];
+  }
+}
+
 function getProductPayload(formData) {
   return {
-    name: formData.get("name"),
-    description: formData.get("description"),
+    name: String(formData.get("name") || "").trim(),
+    description: String(formData.get("description") || "").trim(),
     price: Number(formData.get("price")),
     stock: Number(formData.get("stock")),
-    image: formData.get("image"),
+    image: String(formData.get("image") || "").trim(),
+
     categories: formData
       .getAll("categories")
-      .filter((categoryId) => mongoose.Types.ObjectId.isValid(categoryId)),
+      .filter((categoryId) =>
+        mongoose.Types.ObjectId.isValid(categoryId)
+      ),
+
+    customizations: parseCustomizations(formData),
   };
 }
 
-function revalidateProductsDashboard() {
+function revalidateProductPages() {
   revalidatePath("/");
+  revalidatePath("/categories");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/products");
 }
 
 export async function createProduct(_previousState, formData) {
   try {
     await connectDB();
-    await Product.create(getProductPayload(formData));
-    revalidateProductsDashboard();
 
-    return { ok: true, message: "Producto creado." };
+    const payload = getProductPayload(formData);
+
+    await Product.create(payload);
+
+    revalidateProductPages();
+
+    return {
+      ok: true,
+      message: "Producto creado correctamente.",
+    };
   } catch (error) {
     return {
       ok: false,
@@ -42,23 +88,35 @@ export async function createProduct(_previousState, formData) {
 
 export async function updateProduct(id, _previousState, formData) {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return { ok: false, message: "ID de producto invalido." };
+    return {
+      ok: false,
+      message: "ID de producto inválido.",
+    };
   }
 
   try {
     await connectDB();
 
-    const product = await Product.findByIdAndUpdate(id, getProductPayload(formData), {
+    const payload = getProductPayload(formData);
+
+    const product = await Product.findByIdAndUpdate(id, payload, {
       new: true,
       runValidators: true,
     });
 
     if (!product) {
-      return { ok: false, message: "Producto no encontrado." };
+      return {
+        ok: false,
+        message: "Producto no encontrado.",
+      };
     }
 
-    revalidateProductsDashboard();
-    return { ok: true, message: "Producto actualizado." };
+    revalidateProductPages();
+
+    return {
+      ok: true,
+      message: "Producto actualizado correctamente.",
+    };
   } catch (error) {
     return {
       ok: false,
@@ -69,7 +127,10 @@ export async function updateProduct(id, _previousState, formData) {
 
 export async function deleteProduct(id) {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return { ok: false, message: "ID de producto invalido." };
+    return {
+      ok: false,
+      message: "ID de producto inválido.",
+    };
   }
 
   try {
@@ -78,11 +139,18 @@ export async function deleteProduct(id) {
     const product = await Product.findByIdAndDelete(id);
 
     if (!product) {
-      return { ok: false, message: "Producto no encontrado." };
+      return {
+        ok: false,
+        message: "Producto no encontrado.",
+      };
     }
 
-    revalidateProductsDashboard();
-    return { ok: true, message: "Producto eliminado." };
+    revalidateProductPages();
+
+    return {
+      ok: true,
+      message: "Producto eliminado correctamente.",
+    };
   } catch (error) {
     return {
       ok: false,

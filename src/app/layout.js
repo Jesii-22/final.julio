@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 
 import Navbar from "@/components/Navbar";
+import { GlobalProvider } from "@/context/GlobalContext";
 
 import "./globals.css";
 
@@ -15,19 +16,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "CRUD de Productos",
-  description: "Ejemplo simple de ecommerce con Next.js y MongoDB",
+  title: "Mutuo | Objetos funcionales",
+  description:
+    "Objetos funcionales impresos en 3D para simplificar y organizar tu hogar.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        {children}
+      <body className="flex min-h-full flex-col">
+        <GlobalProvider>
+          <Navbar />
+
+          <main className="flex-1">
+            {children}
+          </main>
+        </GlobalProvider>
       </body>
     </html>
   );

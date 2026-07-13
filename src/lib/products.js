@@ -4,23 +4,24 @@ import Product from "@/models/Product";
 import { serializeCategory } from "@/lib/categories";
 
 function serializeProduct(product) {
-  return {
-    _id: product._id.toString(),
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    stock: product.stock,
-    image: product.image,
-    categories: (product.categories || []).map((category) => {
-      if (category?.name) {
-        return serializeCategory(category);
-      }
-
-      return category.toString();
-    }),
-    createdAt: product.createdAt?.toISOString(),
-    updatedAt: product.updatedAt?.toISOString(),
-  };
+return {
+  _id: product._id.toString(),
+  name: product.name,
+  description: product.description,
+  price: product.price,
+  stock: product.stock,
+  image: product.image,
+  customizations: product.customizations || [],
+  categories: (product.categories || []).map((category) => {
+    if (category?.name) {
+      return serializeCategory(category);
+    }
+  
+    return category.toString();
+  }),
+  createdAt: product.createdAt?.toISOString(),
+  updatedAt: product.updatedAt?.toISOString(),
+};
 }
 
 export async function getProducts() {

@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   CARD_INSTALLMENTS,
@@ -112,8 +116,74 @@ export default function CheckoutPage() {
     setIsCreatingOrder,
   ] = useState(false);
 
-  const [createdOrder, setCreatedOrder] =
-    useState(null);
+    const [createdOrder, setCreatedOrder] =
+        useState(null);
+
+        useEffect(() => {
+    let cancelled = false;
+
+    async function loadUserProfile() {
+        if (!activeUser?._id) {
+        return;
+        }
+
+        try {
+        const response = await fetch(
+            `/api/users/${activeUser._id}`,
+            {
+            cache: "no-store",
+            }
+        );
+
+        const responseText =
+            await response.text();
+
+        if (!responseText) {
+            return;
+        }
+
+        const data =
+            JSON.parse(responseText);
+
+        if (
+            !response.ok ||
+            !data.ok ||
+            cancelled
+        ) {
+            return;
+        }
+
+        setCustomerData((current) => ({
+            ...current,
+            name: data.user.name || "",
+            lastName:
+            data.user.lastName || "",
+            email: data.user.email || "",
+            phone: data.user.phone || "",
+        }));
+
+        setDelivery((current) => ({
+            ...current,
+            address:
+            data.user.address || "",
+            city: data.user.city || "",
+            postalCode:
+            data.user.postalCode || "",
+        }));
+        } catch (error) {
+        console.error(
+            "No se pudieron autocompletar los datos:",
+            error
+        );
+        }
+    }
+
+    loadUserProfile();
+
+    return () => {
+        cancelled = true;
+    };
+    }, [activeUser?._id]);
 
   const discountPercentage =
     getDiscountPercentage(payment.method);

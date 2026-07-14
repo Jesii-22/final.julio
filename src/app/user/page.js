@@ -234,12 +234,21 @@ export default function UserPage() {
             </div>
           </div>
 
-          <Link
-            className="mt-6 inline-flex w-full justify-center rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
-            href="/favorites"
-          >
-            Ver mis favoritos
-          </Link>
+          <div className="mt-6 grid gap-3">
+            <Link
+                className="inline-flex w-full justify-center rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+                href="/user/profile"
+            >
+                Editar mis datos
+            </Link>
+
+            <Link
+                className="inline-flex w-full justify-center rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+                href="/favorites"
+            >
+                Ver mis favoritos
+            </Link>
+        </div>
         </aside>
 
         <section>
@@ -384,6 +393,7 @@ export default function UserPage() {
                         Ver detalle
                       </Link>
                     </div>
+                    
                   </article>
                 );
               })}

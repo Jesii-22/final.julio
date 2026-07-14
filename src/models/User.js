@@ -28,6 +28,30 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    address: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    city: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    postalCode: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -46,13 +70,21 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+/*
+  Durante el desarrollo, Next puede mantener en memoria
+  una versión anterior del modelo.
+
+  Si faltan los nuevos campos, recargamos el modelo.
+*/
 if (mongoose.models.User) {
-  const existingSchema = mongoose.models.User.schema;
+  const existingSchema =
+    mongoose.models.User.schema;
 
   const needsReload =
-    !existingSchema.path("lastName") ||
-    !existingSchema.path("role") ||
-    existingSchema.path("password")?.options?.select !== false;
+    !existingSchema.path("phone") ||
+    !existingSchema.path("address") ||
+    !existingSchema.path("city") ||
+    !existingSchema.path("postalCode");
 
   if (needsReload) {
     mongoose.deleteModel("User");
@@ -60,6 +92,7 @@ if (mongoose.models.User) {
 }
 
 const User =
-  mongoose.models.User || mongoose.model("User", userSchema);
+  mongoose.models.User ||
+  mongoose.model("User", userSchema);
 
 export default User;

@@ -3,18 +3,24 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { useGlobalContext } from "@/context/GlobalContext";
 import {
+  CARD_INSTALLMENTS,
   FREE_SHIPPING_THRESHOLD,
   PICKUP_POINTS,
+  PICKUP_TIME_SLOTS,
   STORE_PICKUP,
   TRANSFER_DATA,
+  calculateCardSurcharge,
   calculateDiscount,
   calculateShippingCost,
   createEmailUrl,
   createWhatsAppUrl,
+  formatPickupDate,
+  getCardSurchargePercentage,
   getDiscountPercentage,
+  getPickupTimeSlotLabel,
 } from "@/lib/commerce";
+import { useGlobalContext } from "@/context/GlobalContext";
 
 function formatPrice(price) {
   return new Intl.NumberFormat("es-AR", {
@@ -27,11 +33,24 @@ function formatPrice(price) {
 function getPaymentLabel(method) {
   const labels = {
     cash: "Efectivo",
-    transfer: "Transferencia bancaria",
-    card: "Tarjeta",
+    transfer: "Transferencia",
+    card: "Tarjeta de crédito",
   };
 
   return labels[method] || method;
+}
+
+function getTodayInputValue() {
+  const today = new Date();
+
+  const localDate = new Date(
+    today.getTime() -
+      today.getTimezoneOffset() * 60000
+  );
+
+  return localDate
+    .toISOString()
+    .split("T")[0];
 }
 
 const initialCardForm = {
@@ -49,13 +68,20 @@ export default function CheckoutPage() {
     clearCart,
   } = useGlobalContext();
 
-  const [customerData, setCustomerData] = useState({
-    name: activeUser?.name || "",
-    lastName: activeUser?.lastName || "",
-    email: activeUser?.email || "",
-    phone: "",
-    observations: "",
-  });
+  const minPickupDate = useMemo(
+    () => getTodayInputValue(),
+    []
+  );
+
+  const [customerData, setCustomerData] =
+    useState({
+      name: activeUser?.name || "",
+      lastName:
+        activeUser?.lastName || "",
+      email: activeUser?.email || "",
+      phone: "",
+      observations: "",
+    });
 
   const [delivery, setDelivery] = useState({
     method: "pickup_store",
@@ -63,6 +89,8 @@ export default function CheckoutPage() {
     address: "",
     city: "",
     postalCode: "",
+    pickupDate: "",
+    pickupTimeSlot: "",
   });
 
   const [payment, setPayment] = useState({
@@ -76,9 +104,13 @@ export default function CheckoutPage() {
   const [shippingQuote, setShippingQuote] =
     useState(null);
 
-  const [message, setMessage] = useState("");
-  const [isCreatingOrder, setIsCreatingOrder] =
-    useState(false);
+  const [message, setMessage] =
+    useState("");
+
+  const [
+    isCreatingOrder,
+    setIsCreatingOrder,
+  ] = useState(false);
 
   const [createdOrder, setCreatedOrder] =
     useState(null);
@@ -95,14 +127,42 @@ export default function CheckoutPage() {
     [cartTotal, payment.method]
   );
 
+  const surchargePercentage =
+    payment.method === "card"
+      ? getCardSurchargePercentage(
+          payment.installments
+        )
+      : 0;
+
+  const surchargeAmount = useMemo(
+    () =>
+      payment.method === "card"
+        ? calculateCardSurcharge(
+            cartTotal,
+            payment.installments
+          )
+        : 0,
+    [
+      cartTotal,
+      payment.method,
+      payment.installments,
+    ]
+  );
+
   const shippingCost = useMemo(() => {
-    if (delivery.method === "pickup_store") {
+    if (
+      delivery.method === "pickup_store"
+    ) {
       return 0;
     }
 
-    if (delivery.method === "pickup_point") {
+    if (
+      delivery.method === "pickup_point"
+    ) {
       return (
-        PICKUP_POINTS[delivery.pointCode]?.cost || 0
+        PICKUP_POINTS[
+          delivery.pointCode
+        ]?.cost || 0
       );
     }
 
@@ -119,13 +179,18 @@ export default function CheckoutPage() {
 
   const finalTotal = Math.max(
     0,
-    cartTotal - discountAmount + shippingCost
+    cartTotal -
+      discountAmount +
+      surchargeAmount +
+      shippingCost
   );
 
-  const amountForFreeShipping = Math.max(
-    0,
-    FREE_SHIPPING_THRESHOLD - cartTotal
-  );
+  const amountForFreeShipping =
+    Math.max(
+      0,
+      FREE_SHIPPING_THRESHOLD -
+        cartTotal
+    );
 
   function handleCustomerChange(event) {
     const { name, value } = event.target;
@@ -138,14 +203,27 @@ export default function CheckoutPage() {
     setMessage("");
   }
 
-  function handleDeliveryMethodChange(method) {
+  function handleDeliveryMethodChange(
+    method
+  ) {
     setDelivery((current) => ({
       ...current,
       method,
+
       pointCode:
         method === "pickup_point"
           ? current.pointCode
           : "",
+
+      pickupDate:
+        method === "shipping"
+          ? ""
+          : current.pickupDate,
+
+      pickupTimeSlot:
+        method === "shipping"
+          ? ""
+          : current.pickupTimeSlot,
     }));
 
     setShippingQuote(null);
@@ -177,23 +255,24 @@ export default function CheckoutPage() {
     setMessage("");
   }
 
-  function handlePaymentMethodChange(method) {
+  function handlePaymentMethodChange(
+    method
+  ) {
     if (
       method === "cash" &&
       delivery.method === "shipping"
     ) {
       setMessage(
-        "El efectivo está disponible únicamente para retiro o puntos de encuentro."
+        "El efectivo está disponible únicamente para retiros o puntos de encuentro."
       );
 
       return;
     }
 
-    setPayment((current) => ({
-      ...current,
+    setPayment({
       method,
-      installments: method === "card" ? 1 : 1,
-    }));
+      installments: 1,
+    });
 
     setMessage("");
   }
@@ -209,8 +288,25 @@ export default function CheckoutPage() {
     setMessage("");
   }
 
+  function fillTestCard() {
+    setCardForm({
+      holder: "CLIENTE PRUEBA MUTUO",
+      number: "4111111111111111",
+      expiration: "12/30",
+      securityCode: "123",
+    });
+
+    setPayment({
+      method: "card",
+      installments: 3,
+    });
+
+    setMessage("");
+  }
+
   function handleCalculateShipping() {
-    const postalCode = delivery.postalCode.trim();
+    const postalCode =
+      delivery.postalCode.trim();
 
     if (!postalCode) {
       setMessage(
@@ -234,22 +330,96 @@ export default function CheckoutPage() {
       return true;
     }
 
-    const cardNumber = cardForm.number.replace(
-      /\D/g,
-      ""
-    );
+    const cardNumber =
+      cardForm.number.replace(/\D/g, "");
 
     const securityCode =
-      cardForm.securityCode.replace(/\D/g, "");
+      cardForm.securityCode.replace(
+        /\D/g,
+        ""
+      );
+
+    const validExpiration =
+      /^\d{2}\/\d{2}$/.test(
+        cardForm.expiration
+      );
 
     if (
       !cardForm.holder.trim() ||
       cardNumber.length < 13 ||
-      !cardForm.expiration.trim() ||
+      !validExpiration ||
       securityCode.length < 3
     ) {
       setMessage(
         "Completá correctamente los datos de la tarjeta."
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  function validatePickup() {
+    if (delivery.method === "shipping") {
+      return true;
+    }
+
+    if (
+      !delivery.pickupDate ||
+      !delivery.pickupTimeSlot
+    ) {
+      setMessage(
+        "Seleccioná el día y horario aproximado del retiro."
+      );
+
+      return false;
+    }
+
+    const pickupDate = new Date(
+      `${delivery.pickupDate}T12:00:00`
+    );
+
+    if (
+      Number.isNaN(pickupDate.getTime())
+    ) {
+      setMessage(
+        "La fecha de retiro no es válida."
+      );
+
+      return false;
+    }
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    pickupDate.setHours(0, 0, 0, 0);
+
+    if (pickupDate < today) {
+      setMessage(
+        "La fecha de retiro no puede ser anterior a hoy."
+      );
+
+      return false;
+    }
+
+    const day = pickupDate.getDay();
+
+    if (day === 0) {
+      setMessage(
+        "Los domingos no se realizan retiros."
+      );
+
+      return false;
+    }
+
+    if (
+      day === 6 &&
+      delivery.pickupTimeSlot !==
+        "morning"
+    ) {
+      setMessage(
+        "Los sábados los retiros son únicamente por la mañana."
       );
 
       return false;
@@ -272,13 +442,9 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (!payment.method) {
-      setMessage("Seleccioná un medio de pago.");
-      return false;
-    }
-
     if (
-      delivery.method === "pickup_point" &&
+      delivery.method ===
+        "pickup_point" &&
       !delivery.pointCode
     ) {
       setMessage(
@@ -288,7 +454,13 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (delivery.method === "shipping") {
+    if (!validatePickup()) {
+      return false;
+    }
+
+    if (
+      delivery.method === "shipping"
+    ) {
       if (
         !delivery.address.trim() ||
         !delivery.city.trim() ||
@@ -310,6 +482,14 @@ export default function CheckoutPage() {
       }
     }
 
+    if (!payment.method) {
+      setMessage(
+        "Seleccioná un medio de pago."
+      );
+
+      return false;
+    }
+
     return validateCard();
   }
 
@@ -325,42 +505,56 @@ export default function CheckoutPage() {
     setIsCreatingOrder(true);
 
     try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
+      const response = await fetch(
+        "/api/orders",
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          userId: activeUser?._id || null,
-
-          customerData,
-
-          delivery: {
-            method: delivery.method,
-            pointCode: delivery.pointCode,
-            address: delivery.address,
-            city: delivery.city,
-            postalCode: delivery.postalCode,
+          headers: {
+            "Content-Type":
+              "application/json",
           },
 
-          payment: {
-            method: payment.method,
-            installments: payment.installments,
-          },
+          body: JSON.stringify({
+            userId:
+              activeUser?._id || null,
 
-          items: cart.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            customizations:
-              item.customizations || {},
-          })),
-        }),
-      });
+            customerData,
+
+            delivery: {
+              method: delivery.method,
+              pointCode:
+                delivery.pointCode,
+              address: delivery.address,
+              city: delivery.city,
+              postalCode:
+                delivery.postalCode,
+              pickupDate:
+                delivery.pickupDate,
+              pickupTimeSlot:
+                delivery.pickupTimeSlot,
+            },
+
+            payment: {
+              method: payment.method,
+              installments:
+                payment.installments,
+            },
+
+            items: cart.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              customizations:
+                item.customizations || {},
+            })),
+          }),
+        }
+      );
 
       const contentType =
-        response.headers.get("content-type") || "";
+        response.headers.get(
+          "content-type"
+        ) || "";
 
       const data = contentType.includes(
         "application/json"
@@ -368,7 +562,8 @@ export default function CheckoutPage() {
         ? await response.json()
         : {
             ok: false,
-            message: await response.text(),
+            message:
+              await response.text(),
           };
 
       if (!response.ok || !data.ok) {
@@ -397,12 +592,17 @@ export default function CheckoutPage() {
   }
 
   if (createdOrder) {
-    const whatsappUrl = createWhatsAppUrl(
-      createdOrder.orderNumber
-    );
+    const whatsappUrl =
+      createWhatsAppUrl(createdOrder);
 
-    const emailUrl = createEmailUrl(
-      createdOrder.orderNumber
+    const emailUrl =
+      createEmailUrl(createdOrder);
+
+    const isContactPayment = [
+      "cash",
+      "transfer",
+    ].includes(
+      createdOrder.payment.method
     );
 
     return (
@@ -423,7 +623,8 @@ export default function CheckoutPage() {
           <p className="mt-4 text-lg text-slate-600">
             Tu orden es la{" "}
             <span className="font-bold text-blue-700">
-              N.º {createdOrder.orderNumber}
+              N.º{" "}
+              {createdOrder.orderNumber}
             </span>
           </p>
 
@@ -438,6 +639,17 @@ export default function CheckoutPage() {
                   createdOrder.payment.method
                 )}
               </p>
+
+              {createdOrder.payment.method ===
+              "card" ? (
+                <p className="mt-1 text-sm text-slate-600">
+                  {
+                    createdOrder.payment
+                      .installments
+                  }{" "}
+                  cuota(s)
+                </p>
+              ) : null}
             </div>
 
             <div className="rounded-2xl bg-slate-50 p-5">
@@ -446,7 +658,9 @@ export default function CheckoutPage() {
               </p>
 
               <p className="mt-2 text-xl font-bold text-blue-700">
-                {formatPrice(createdOrder.total)}
+                {formatPrice(
+                  createdOrder.total
+                )}
               </p>
             </div>
 
@@ -456,31 +670,67 @@ export default function CheckoutPage() {
               </p>
 
               <p className="mt-2 font-semibold text-slate-950">
-                {createdOrder.delivery.label}
+                {
+                  createdOrder.delivery
+                    .label
+                }
               </p>
 
-              {createdOrder.delivery.address ? (
+              {createdOrder.delivery
+                .address ? (
                 <p className="mt-1 text-sm text-slate-600">
-                  {createdOrder.delivery.address}
-                  {createdOrder.delivery.city
+                  {
+                    createdOrder.delivery
+                      .address
+                  }
+
+                  {createdOrder.delivery
+                    .city
                     ? `, ${createdOrder.delivery.city}`
                     : ""}
                 </p>
               ) : null}
 
-              {createdOrder.delivery.schedule ? (
+              {createdOrder.delivery
+                .schedule ? (
                 <p className="mt-2 text-sm text-slate-600">
-                  {createdOrder.delivery.schedule}
+                  {
+                    createdOrder.delivery
+                      .schedule
+                  }
                 </p>
               ) : null}
             </div>
+
+            {createdOrder.delivery
+              .pickupDate ? (
+              <div className="rounded-2xl bg-orange-50 p-5 sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
+                  Retiro aproximado
+                </p>
+
+                <p className="mt-2 font-semibold text-orange-950">
+                  {formatPickupDate(
+                    createdOrder.delivery
+                      .pickupDate
+                  )}
+                </p>
+
+                <p className="mt-1 text-sm text-orange-900">
+                  {getPickupTimeSlotLabel(
+                    createdOrder.delivery
+                      .pickupTimeSlot
+                  )}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {createdOrder.payment.method ===
           "transfer" ? (
             <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-blue-200 bg-blue-50 p-6 text-left">
               <h2 className="text-xl font-bold text-blue-950">
-                Datos para realizar la transferencia
+                Datos para la transferencia
               </h2>
 
               <div className="mt-4 space-y-2 text-sm text-blue-950">
@@ -506,32 +756,33 @@ export default function CheckoutPage() {
               </div>
 
               <p className="mt-5 text-sm text-blue-900">
-                Cuando realices la transferencia,
-                envianos el comprobante indicando el
+                Luego de transferir, enviá
+                el comprobante indicando el
                 número de orden.
               </p>
             </div>
           ) : null}
 
-          {createdOrder.payment.method === "cash" ? (
+          {createdOrder.payment.method ===
+          "cash" ? (
             <p className="mx-auto mt-8 max-w-2xl rounded-2xl bg-orange-50 p-5 text-sm text-orange-900">
-              El pago en efectivo se realiza al momento
-              de retirar o recibir el producto en el punto
-              acordado.
+              El pago se realiza al retirar.
+              Reconfirmá previamente el día y
+              la franja horaria elegida.
             </p>
           ) : null}
 
-          {createdOrder.payment.method === "card" ? (
+          {createdOrder.payment.method ===
+          "card" ? (
             <p className="mx-auto mt-8 max-w-2xl rounded-2xl bg-blue-50 p-5 text-sm text-blue-900">
-              El pago con tarjeta fue procesado como una
-              simulación académica. No se realizó ningún
-              cobro real.
+              El pago con tarjeta fue una
+              simulación académica. No se
+              realizó ningún cobro real.
             </p>
           ) : null}
 
-          <div className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-            {createdOrder.payment.method ===
-            "transfer" ? (
+          <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+            {isContactPayment ? (
               <>
                 <a
                   className="rounded-xl bg-emerald-600 px-6 py-4 font-semibold text-white hover:bg-emerald-700"
@@ -539,14 +790,20 @@ export default function CheckoutPage() {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Enviar comprobante por WhatsApp
+                  {createdOrder.payment
+                    .method === "cash"
+                    ? "Reconfirmar retiro por WhatsApp"
+                    : "Enviar comprobante por WhatsApp"}
                 </a>
 
                 <a
                   className="rounded-xl border border-blue-300 bg-white px-6 py-4 font-semibold text-blue-700 hover:bg-blue-50"
                   href={emailUrl}
                 >
-                  Enviar comprobante por email
+                  {createdOrder.payment
+                    .method === "cash"
+                    ? "Reconfirmar retiro por email"
+                    : "Enviar comprobante por email"}
                 </a>
               </>
             ) : null}
@@ -572,8 +829,8 @@ export default function CheckoutPage() {
           </h1>
 
           <p className="mt-4 text-slate-600">
-            Agregá un producto antes de continuar con la
-            compra.
+            Agregá un producto antes de
+            continuar con la compra.
           </p>
 
           <Link
@@ -599,8 +856,8 @@ export default function CheckoutPage() {
         </h1>
 
         <p className="mt-3 text-slate-600">
-          Completá tus datos, elegí la forma de entrega y
-          el medio de pago.
+          Completá tus datos, elegí la forma
+          de entrega y el medio de pago.
         </p>
       </div>
 
@@ -624,7 +881,9 @@ export default function CheckoutPage() {
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
                   name="name"
                   value={customerData.name}
-                  onChange={handleCustomerChange}
+                  onChange={
+                    handleCustomerChange
+                  }
                   required
                 />
               </label>
@@ -637,8 +896,12 @@ export default function CheckoutPage() {
                 <input
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
                   name="lastName"
-                  value={customerData.lastName}
-                  onChange={handleCustomerChange}
+                  value={
+                    customerData.lastName
+                  }
+                  onChange={
+                    handleCustomerChange
+                  }
                   required
                 />
               </label>
@@ -652,8 +915,12 @@ export default function CheckoutPage() {
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
                   name="email"
                   type="email"
-                  value={customerData.email}
-                  onChange={handleCustomerChange}
+                  value={
+                    customerData.email
+                  }
+                  onChange={
+                    handleCustomerChange
+                  }
                   required
                 />
               </label>
@@ -667,8 +934,12 @@ export default function CheckoutPage() {
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
                   name="phone"
                   placeholder="Ejemplo: 11 2644 4064"
-                  value={customerData.phone}
-                  onChange={handleCustomerChange}
+                  value={
+                    customerData.phone
+                  }
+                  onChange={
+                    handleCustomerChange
+                  }
                   required
                 />
               </label>
@@ -682,9 +953,13 @@ export default function CheckoutPage() {
               <textarea
                 className="min-h-28 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
                 name="observations"
-                placeholder="Indicaciones, consultas u observaciones sobre la compra."
-                value={customerData.observations}
-                onChange={handleCustomerChange}
+                placeholder="Indicaciones, consultas u observaciones."
+                value={
+                  customerData.observations
+                }
+                onChange={
+                  handleCustomerChange
+                }
               />
             </label>
           </section>
@@ -697,7 +972,8 @@ export default function CheckoutPage() {
             <div className="mt-6 space-y-4">
               <label
                 className={`block cursor-pointer rounded-2xl border p-5 ${
-                  delivery.method === "pickup_store"
+                  delivery.method ===
+                  "pickup_store"
                     ? "border-blue-500 bg-blue-50"
                     : "border-slate-200"
                 }`}
@@ -719,28 +995,38 @@ export default function CheckoutPage() {
 
                   <div>
                     <p className="font-bold text-slate-950">
-                      Retiro en Mutuo — Gratis
+                      Retiro en Mutuo —
+                      Gratis
                     </p>
 
                     <p className="mt-2 text-sm text-slate-600">
-                      {STORE_PICKUP.address}
+                      {
+                        STORE_PICKUP.address
+                      }
                     </p>
 
                     <p className="mt-2 text-sm text-slate-600">
-                      {STORE_PICKUP.schedule}
+                      {
+                        STORE_PICKUP.schedule
+                      }
                     </p>
 
-                    <p className="mt-2 text-xs text-slate-500">
-                      Otros horarios pueden coordinarse por
-                      WhatsApp.
-                    </p>
+                    <a
+                      className="mt-3 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+                      href="https://www.google.com/maps/search/?api=1&query=Garibaldi+1506+Ramos+Mejia"
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Ver ubicación
+                    </a>
                   </div>
                 </div>
               </label>
 
               <label
                 className={`block cursor-pointer rounded-2xl border p-5 ${
-                  delivery.method === "pickup_point"
+                  delivery.method ===
+                  "pickup_point"
                     ? "border-blue-500 bg-blue-50"
                     : "border-slate-200"
                 }`}
@@ -760,13 +1046,14 @@ export default function CheckoutPage() {
                     }
                   />
 
-                  <div className="flex-1">
+                  <div>
                     <p className="font-bold text-slate-950">
                       Punto de encuentro
                     </p>
 
                     <p className="mt-2 text-sm text-slate-600">
-                      Costo: {formatPrice(2500)}
+                      Costo:{" "}
+                      {formatPrice(2500)}
                     </p>
                   </div>
                 </div>
@@ -774,44 +1061,45 @@ export default function CheckoutPage() {
                 {delivery.method ===
                 "pickup_point" ? (
                   <div className="mt-5 grid gap-3">
-                    {Object.values(PICKUP_POINTS).map(
-                      (point) => (
-                        <label
-                          key={point.code}
-                          className="flex cursor-pointer gap-3 rounded-xl border border-slate-200 bg-white p-4"
-                        >
-                          <input
-                            checked={
-                              delivery.pointCode ===
-                              point.code
-                            }
-                            name="pointCode"
-                            type="radio"
-                            value={point.code}
-                            onChange={
-                              handleDeliveryChange
-                            }
-                          />
+                    {Object.values(
+                      PICKUP_POINTS
+                    ).map((point) => (
+                      <label
+                        key={point.code}
+                        className="flex cursor-pointer gap-3 rounded-xl border border-slate-200 bg-white p-4"
+                      >
+                        <input
+                          checked={
+                            delivery.pointCode ===
+                            point.code
+                          }
+                          name="pointCode"
+                          type="radio"
+                          value={point.code}
+                          onChange={
+                            handleDeliveryChange
+                          }
+                        />
 
-                          <span>
-                            <span className="block font-semibold text-slate-950">
-                              {point.label}
-                            </span>
-
-                            <span className="mt-1 block text-sm text-slate-600">
-                              {point.schedule}
-                            </span>
+                        <span>
+                          <span className="block font-semibold text-slate-950">
+                            {point.label}
                           </span>
-                        </label>
-                      )
-                    )}
+
+                          <span className="mt-1 block text-sm text-slate-600">
+                            {point.schedule}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 ) : null}
               </label>
 
               <label
                 className={`block cursor-pointer rounded-2xl border p-5 ${
-                  delivery.method === "shipping"
+                  delivery.method ===
+                  "shipping"
                     ? "border-blue-500 bg-blue-50"
                     : "border-slate-200"
                 }`}
@@ -819,7 +1107,8 @@ export default function CheckoutPage() {
                 <div className="flex gap-3">
                   <input
                     checked={
-                      delivery.method === "shipping"
+                      delivery.method ===
+                      "shipping"
                     }
                     name="deliveryMethod"
                     type="radio"
@@ -836,20 +1125,25 @@ export default function CheckoutPage() {
                     </p>
 
                     <p className="mt-2 text-sm text-slate-600">
-                      Costo ficticio calculado según el
+                      Costo simulado según
                       código postal.
                     </p>
                   </div>
                 </div>
 
-                {delivery.method === "shipping" ? (
+                {delivery.method ===
+                "shipping" ? (
                   <div className="mt-5 grid gap-4">
                     <input
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600"
                       name="address"
                       placeholder="Dirección y altura"
-                      value={delivery.address}
-                      onChange={handleDeliveryChange}
+                      value={
+                        delivery.address
+                      }
+                      onChange={
+                        handleDeliveryChange
+                      }
                     />
 
                     <input
@@ -857,7 +1151,9 @@ export default function CheckoutPage() {
                       name="city"
                       placeholder="Localidad"
                       value={delivery.city}
-                      onChange={handleDeliveryChange}
+                      onChange={
+                        handleDeliveryChange
+                      }
                     />
 
                     <div className="flex flex-col gap-3 sm:flex-row">
@@ -865,8 +1161,12 @@ export default function CheckoutPage() {
                         className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600"
                         name="postalCode"
                         placeholder="Código postal"
-                        value={delivery.postalCode}
-                        onChange={handleDeliveryChange}
+                        value={
+                          delivery.postalCode
+                        }
+                        onChange={
+                          handleDeliveryChange
+                        }
                       />
 
                       <button
@@ -883,12 +1183,15 @@ export default function CheckoutPage() {
                     {shippingQuote ? (
                       <div className="rounded-xl bg-white p-4">
                         <p className="font-semibold text-slate-950">
-                          {shippingQuote.zone}
+                          {
+                            shippingQuote.zone
+                          }
                         </p>
 
                         <p className="mt-1 text-sm text-slate-600">
                           Envío:{" "}
-                          {shippingQuote.cost === 0
+                          {shippingQuote.cost ===
+                          0
                             ? "Gratis"
                             : formatPrice(
                                 shippingQuote.cost
@@ -901,13 +1204,80 @@ export default function CheckoutPage() {
               </label>
             </div>
 
+            {delivery.method !==
+            "shipping" ? (
+              <div className="mt-5 grid gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 sm:grid-cols-2">
+                <label>
+                  <span className="mb-2 block text-sm font-medium text-orange-950">
+                    Día aproximado
+                  </span>
+
+                  <input
+                    className="w-full rounded-xl border border-orange-200 bg-white px-4 py-3 outline-none focus:border-orange-500"
+                    min={minPickupDate}
+                    name="pickupDate"
+                    type="date"
+                    value={
+                      delivery.pickupDate
+                    }
+                    onChange={
+                      handleDeliveryChange
+                    }
+                  />
+                </label>
+
+                <label>
+                  <span className="mb-2 block text-sm font-medium text-orange-950">
+                    Franja horaria
+                  </span>
+
+                  <select
+                    className="w-full rounded-xl border border-orange-200 bg-white px-4 py-3 outline-none focus:border-orange-500"
+                    name="pickupTimeSlot"
+                    value={
+                      delivery.pickupTimeSlot
+                    }
+                    onChange={
+                      handleDeliveryChange
+                    }
+                  >
+                    <option value="">
+                      Seleccionar
+                    </option>
+
+                    {Object.values(
+                      PICKUP_TIME_SLOTS
+                    ).map((slot) => (
+                      <option
+                        key={slot.code}
+                        value={slot.code}
+                      >
+                        {slot.label} —{" "}
+                        {slot.hours}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <p className="text-xs text-orange-800 sm:col-span-2">
+                  La fecha y el horario son
+                  aproximados. Los domingos
+                  no hay retiros y los sábados
+                  solo está disponible la
+                  mañana.
+                </p>
+              </div>
+            ) : null}
+
             {cartTotal >=
             FREE_SHIPPING_THRESHOLD ? (
               <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Tu compra tiene envío gratis por superar{" "}
+                Tu compra tiene envío gratis
+                por superar{" "}
                 {formatPrice(
                   FREE_SHIPPING_THRESHOLD
-                )}.
+                )}
+                .
               </p>
             ) : (
               <p className="mt-5 rounded-xl bg-orange-50 p-4 text-sm text-orange-900">
@@ -934,31 +1304,36 @@ export default function CheckoutPage() {
                     ? "border-blue-500 bg-blue-50"
                     : "border-slate-200"
                 } ${
-                  delivery.method === "shipping"
+                  delivery.method ===
+                  "shipping"
                     ? "cursor-not-allowed opacity-50"
                     : ""
                 }`}
                 disabled={
-                  delivery.method === "shipping"
+                  delivery.method ===
+                  "shipping"
                 }
                 type="button"
                 onClick={() =>
-                  handlePaymentMethodChange("cash")
+                  handlePaymentMethodChange(
+                    "cash"
+                  )
                 }
               >
                 <p className="font-bold text-slate-950">
-                  Efectivo — 15% de descuento
+                  Efectivo — 15% de
+                  descuento
                 </p>
 
                 <p className="mt-2 text-sm text-slate-600">
-                  Disponible para retiro y puntos de
-                  encuentro.
+                  Pago al momento de retirar.
                 </p>
               </button>
 
               <button
                 className={`rounded-2xl border p-5 text-left ${
-                  payment.method === "transfer"
+                  payment.method ===
+                  "transfer"
                     ? "border-blue-500 bg-blue-50"
                     : "border-slate-200"
                 }`}
@@ -970,16 +1345,18 @@ export default function CheckoutPage() {
                 }
               >
                 <p className="font-bold text-slate-950">
-                  Transferencia — 15% de descuento
+                  Transferencia — 15% de
+                  descuento
                 </p>
 
                 <p className="mt-2 text-sm text-slate-600">
-                  El comprobante puede enviarse por
+                  Enviá el comprobante por
                   WhatsApp o email.
                 </p>
               </button>
 
-              {payment.method === "transfer" ? (
+              {payment.method ===
+              "transfer" ? (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
                   <p className="font-bold text-blue-950">
                     Datos de AstroPay
@@ -987,8 +1364,12 @@ export default function CheckoutPage() {
 
                   <div className="mt-3 space-y-2 text-sm text-blue-950">
                     <p>
-                      <strong>Alias:</strong>{" "}
-                      {TRANSFER_DATA.alias}
+                      <strong>
+                        Alias:
+                      </strong>{" "}
+                      {
+                        TRANSFER_DATA.alias
+                      }
                     </p>
 
                     <p className="break-all">
@@ -997,8 +1378,12 @@ export default function CheckoutPage() {
                     </p>
 
                     <p>
-                      <strong>Titular:</strong>{" "}
-                      {TRANSFER_DATA.holder}
+                      <strong>
+                        Titular:
+                      </strong>{" "}
+                      {
+                        TRANSFER_DATA.holder
+                      }
                     </p>
                   </div>
                 </div>
@@ -1012,55 +1397,90 @@ export default function CheckoutPage() {
                 }`}
                 type="button"
                 onClick={() =>
-                  handlePaymentMethodChange("card")
+                  handlePaymentMethodChange(
+                    "card"
+                  )
                 }
               >
                 <p className="font-bold text-slate-950">
-                  Tarjeta
+                  Tarjeta de crédito
                 </p>
 
                 <p className="mt-2 text-sm text-slate-600">
-                  Simulación de pago en 1 o 3 cuotas sin
-                  interés.
+                  Hasta 3 cuotas sin interés.
+                  También hay 6 y 12 cuotas
+                  con recargo.
                 </p>
               </button>
 
               {payment.method === "card" ? (
                 <div className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:grid-cols-2">
+                  <div className="flex items-center justify-between gap-4 sm:col-span-2">
+                    <p className="text-sm font-semibold text-slate-700">
+                      Datos de tarjeta
+                    </p>
+
+                    <button
+                      className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                      type="button"
+                      onClick={fillTestCard}
+                    >
+                      Completar tarjeta de
+                      prueba
+                    </button>
+                  </div>
+
                   <input
                     className="rounded-xl border border-slate-300 bg-white px-4 py-3 sm:col-span-2"
                     name="holder"
                     placeholder="Nombre del titular"
-                    value={cardForm.holder}
-                    onChange={handleCardChange}
+                    value={
+                      cardForm.holder
+                    }
+                    onChange={
+                      handleCardChange
+                    }
                   />
 
                   <input
                     className="rounded-xl border border-slate-300 bg-white px-4 py-3 sm:col-span-2"
                     inputMode="numeric"
+                    maxLength={19}
                     name="number"
                     placeholder="Número de tarjeta"
-                    value={cardForm.number}
-                    onChange={handleCardChange}
+                    value={
+                      cardForm.number
+                    }
+                    onChange={
+                      handleCardChange
+                    }
                   />
 
                   <input
                     className="rounded-xl border border-slate-300 bg-white px-4 py-3"
+                    maxLength={5}
                     name="expiration"
                     placeholder="MM/AA"
-                    value={cardForm.expiration}
-                    onChange={handleCardChange}
+                    value={
+                      cardForm.expiration
+                    }
+                    onChange={
+                      handleCardChange
+                    }
                   />
 
                   <input
                     className="rounded-xl border border-slate-300 bg-white px-4 py-3"
                     inputMode="numeric"
+                    maxLength={4}
                     name="securityCode"
                     placeholder="Código de seguridad"
                     value={
                       cardForm.securityCode
                     }
-                    onChange={handleCardChange}
+                    onChange={
+                      handleCardChange
+                    }
                   />
 
                   <label className="sm:col-span-2">
@@ -1070,34 +1490,64 @@ export default function CheckoutPage() {
 
                     <select
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
-                      value={payment.installments}
+                      value={
+                        payment.installments
+                      }
                       onChange={(event) =>
-                        setPayment((current) => ({
-                          ...current,
-                          installments: Number(
-                            event.target.value
-                          ),
-                        }))
+                        setPayment(
+                          (current) => ({
+                            ...current,
+                            installments:
+                              Number(
+                                event.target
+                                  .value
+                              ),
+                          })
+                        )
                       }
                     >
-                      <option value={1}>
-                        1 cuota de{" "}
-                        {formatPrice(cartTotal)}
-                      </option>
+                      {Object.values(
+                        CARD_INSTALLMENTS
+                      ).map((plan) => {
+                        const planSurcharge =
+                          calculateCardSurcharge(
+                            cartTotal,
+                            plan.installments
+                          );
 
-                      <option value={3}>
-                        3 cuotas de{" "}
-                        {formatPrice(
-                          cartTotal / 3
-                        )}
-                      </option>
+                        const planTotal =
+                          cartTotal +
+                          planSurcharge +
+                          shippingCost;
+
+                        const installmentValue =
+                          planTotal /
+                          plan.installments;
+
+                        return (
+                          <option
+                            key={
+                              plan.installments
+                            }
+                            value={
+                              plan.installments
+                            }
+                          >
+                            {plan.label} —{" "}
+                            {formatPrice(
+                              installmentValue
+                            )}{" "}
+                            por cuota
+                          </option>
+                        );
+                      })}
                     </select>
                   </label>
 
                   <p className="text-xs text-slate-500 sm:col-span-2">
-                    Los datos son únicamente para una
-                    simulación. No se guardan ni se realiza
-                    ningún cobro real.
+                    Es una simulación. Los
+                    datos no se guardan y no
+                    se realiza ningún cobro.
                   </p>
                 </div>
               ) : null}
@@ -1117,11 +1567,14 @@ export default function CheckoutPage() {
                 className="flex justify-between gap-4 text-sm"
               >
                 <p className="text-slate-600">
-                  {item.name} × {item.quantity}
+                  {item.name} ×{" "}
+                  {item.quantity}
                 </p>
 
                 <p className="shrink-0 font-medium text-slate-900">
-                  {formatPrice(item.subtotal)}
+                  {formatPrice(
+                    item.subtotal
+                  )}
                 </p>
               </div>
             ))}
@@ -1141,11 +1594,31 @@ export default function CheckoutPage() {
             {discountPercentage > 0 ? (
               <div className="flex justify-between gap-4 text-emerald-700">
                 <p>
-                  Descuento {discountPercentage}%
+                  Descuento{" "}
+                  {discountPercentage}%
                 </p>
 
                 <p className="font-semibold">
-                  -{formatPrice(discountAmount)}
+                  -
+                  {formatPrice(
+                    discountAmount
+                  )}
+                </p>
+              </div>
+            ) : null}
+
+            {surchargePercentage > 0 ? (
+              <div className="flex justify-between gap-4 text-orange-700">
+                <p>
+                  Recargo tarjeta{" "}
+                  {surchargePercentage}%
+                </p>
+
+                <p className="font-semibold">
+                  +
+                  {formatPrice(
+                    surchargeAmount
+                  )}
                 </p>
               </div>
             ) : null}
@@ -1158,7 +1631,9 @@ export default function CheckoutPage() {
               <p className="font-medium text-slate-950">
                 {shippingCost === 0
                   ? "Gratis"
-                  : formatPrice(shippingCost)}
+                  : formatPrice(
+                      shippingCost
+                    )}
               </p>
             </div>
           </div>
@@ -1174,11 +1649,15 @@ export default function CheckoutPage() {
           </div>
 
           {payment.method === "card" &&
-          payment.installments === 3 ? (
+          payment.installments > 1 ? (
             <p className="mt-3 text-right text-sm text-slate-600">
-              3 cuotas de{" "}
+              {payment.installments} cuotas
+              de{" "}
               <strong>
-                {formatPrice(finalTotal / 3)}
+                {formatPrice(
+                  finalTotal /
+                    payment.installments
+                )}
               </strong>
             </p>
           ) : null}
@@ -1200,9 +1679,10 @@ export default function CheckoutPage() {
           ) : null}
 
           <p className="mt-5 text-xs leading-5 text-slate-500">
-            Al confirmar la compra se generará una orden
-            en MongoDB. Los pagos y envíos son simulados
-            para este proyecto académico.
+            Al confirmar se generará una
+            orden en MongoDB. Los pagos y
+            envíos son simulados para este
+            proyecto académico.
           </p>
         </aside>
       </form>

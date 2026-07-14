@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
 
 import {
+  CARD_INSTALLMENTS,
   PICKUP_POINTS,
+  PICKUP_TIME_SLOTS,
   STORE_PICKUP,
+  calculateCardSurcharge,
   calculateDiscount,
   calculateShippingCost,
+  getCardSurchargePercentage,
   getDiscountPercentage,
 } from "@/lib/commerce";
 import { connectDB } from "@/lib/mongodb";
@@ -28,14 +32,9 @@ function normalizeCustomerData(data = {}) {
   return {
     name: cleanText(data.name),
     lastName: cleanText(data.lastName),
-
     email: cleanText(data.email).toLowerCase(),
-
     phone: cleanText(data.phone),
-
-    observations: cleanText(
-      data.observations
-    ),
+    observations: cleanText(data.observations),
   };
 }
 
@@ -51,24 +50,56 @@ function validateCustomerData(customerData) {
     );
   }
 
-  const validEmail =
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-      customerData.email
-    );
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    customerData.email
+  );
 
   if (!validEmail) {
-    throw requestError(
-      "Ingresá un email válido."
-    );
+    throw requestError("Ingresá un email válido.");
   }
 }
 
-function normalizeDelivery(
-  deliveryData,
-  subtotal
+function normalizeCustomizations(
+  product,
+  selectedCustomizations = {}
 ) {
-  const method = cleanText(
-    deliveryData?.method
+  const normalizedCustomizations = {};
+
+  for (const customization of product.customizations || []) {
+    const name = cleanText(customization.name);
+
+    const selectedValue = cleanText(
+      selectedCustomizations[name]
+    );
+
+    const availableOptions = (
+      customization.options || []
+    ).map((option) => String(option));
+
+    if (
+      !selectedValue ||
+      !availableOptions.includes(selectedValue)
+    ) {
+      throw requestError(
+        `Seleccioná una opción válida para ${name} en ${product.name}.`
+      );
+    }
+
+    normalizedCustomizations[name] = selectedValue;
+  }
+
+  return normalizedCustomizations;
+}
+
+function normalizeDelivery(deliveryData = {}, subtotal) {
+  const method = cleanText(deliveryData.method);
+
+  const pickupDate = cleanText(
+    deliveryData.pickupDate
+  );
+
+  const pickupTimeSlot = cleanText(
+    deliveryData.pickupTimeSlot
   );
 
   if (method === "pickup_store") {
@@ -81,13 +112,15 @@ function normalizeDelivery(
       postalCode: "1704",
       zone: "Ramos Mejía",
       schedule: STORE_PICKUP.schedule,
+      pickupDate,
+      pickupTimeSlot,
       shippingCost: 0,
     };
   }
 
   if (method === "pickup_point") {
     const pointCode = cleanText(
-      deliveryData?.pointCode
+      deliveryData.pointCode
     );
 
     const point = PICKUP_POINTS[pointCode];
@@ -107,21 +140,21 @@ function normalizeDelivery(
       postalCode: "",
       zone: "Punto de encuentro",
       schedule: point.schedule,
+      pickupDate,
+      pickupTimeSlot,
       shippingCost: point.cost,
     };
   }
 
   if (method === "shipping") {
     const address = cleanText(
-      deliveryData?.address
+      deliveryData.address
     );
 
-    const city = cleanText(
-      deliveryData?.city
-    );
+    const city = cleanText(deliveryData.city);
 
     const postalCode = cleanText(
-      deliveryData?.postalCode
+      deliveryData.postalCode
     );
 
     if (!address || !city || !postalCode) {
@@ -143,7 +176,10 @@ function normalizeDelivery(
       city,
       postalCode,
       zone: shipping.zone,
-      schedule: "Entrega estimada de 3 a 7 días hábiles.",
+      schedule:
+        "Entrega estimada de 3 a 7 días hábiles.",
+      pickupDate: "",
+      pickupTimeSlot: "",
       shippingCost: shipping.cost,
     };
   }
@@ -153,14 +189,71 @@ function normalizeDelivery(
   );
 }
 
+function validatePickupSchedule(delivery) {
+  if (
+    !delivery.pickupDate ||
+    !delivery.pickupTimeSlot
+  ) {
+    throw requestError(
+      "Seleccioná el día y horario aproximado del retiro."
+    );
+  }
+
+  if (
+    !PICKUP_TIME_SLOTS[
+      delivery.pickupTimeSlot
+    ]
+  ) {
+    throw requestError(
+      "Seleccioná una franja horaria válida."
+    );
+  }
+
+  const pickupDate = new Date(
+    `${delivery.pickupDate}T12:00:00`
+  );
+
+  if (Number.isNaN(pickupDate.getTime())) {
+    throw requestError(
+      "La fecha de retiro es inválida."
+    );
+  }
+
+  const today = new Date();
+
+  today.setHours(0, 0, 0, 0);
+  pickupDate.setHours(0, 0, 0, 0);
+
+  if (pickupDate < today) {
+    throw requestError(
+      "La fecha de retiro no puede ser anterior a hoy."
+    );
+  }
+
+  const day = pickupDate.getDay();
+
+  if (day === 0) {
+    throw requestError(
+      "Los domingos no se realizan retiros."
+    );
+  }
+
+  if (
+    day === 6 &&
+    delivery.pickupTimeSlot !== "morning"
+  ) {
+    throw requestError(
+      "Los sábados los retiros son únicamente por la mañana."
+    );
+  }
+}
+
 function normalizePayment(
-  paymentData,
+  paymentData = {},
   subtotal,
   delivery
 ) {
-  const method = cleanText(
-    paymentData?.method
-  );
+  const method = cleanText(paymentData.method);
 
   if (
     !["cash", "transfer", "card"].includes(
@@ -181,66 +274,60 @@ function normalizePayment(
     );
   }
 
-  const installments =
-    method === "card" &&
-    Number(paymentData?.installments) === 3
-      ? 3
-      : 1;
+  let installments = 1;
+
+  if (method === "card") {
+    const selectedInstallments = Number(
+      paymentData.installments
+    );
+
+    installments =
+      CARD_INSTALLMENTS[
+        selectedInstallments
+      ]
+        ? selectedInstallments
+        : 1;
+  }
 
   const discountPercentage =
     getDiscountPercentage(method);
 
-  const discountAmount = calculateDiscount(
-    subtotal,
-    method
-  );
+  const discountAmount =
+    calculateDiscount(subtotal, method);
+
+  const surchargePercentage =
+    method === "card"
+      ? getCardSurchargePercentage(
+          installments
+        )
+      : 0;
+
+  const surchargeAmount =
+    method === "card"
+      ? calculateCardSurcharge(
+          subtotal,
+          installments
+        )
+      : 0;
 
   return {
     method,
-    status: "Pending",
+
+    status:
+      method === "card"
+        ? "Paid"
+        : "Pending",
+
     discountPercentage,
     discountAmount,
+    surchargePercentage,
+    surchargeAmount,
     installments,
   };
 }
 
-function normalizeCustomizations(
-  product,
-  selectedCustomizations = {}
-) {
-  const normalized = {};
-
-  for (const customization of
-    product.customizations || []) {
-    const name = cleanText(
-      customization.name
-    );
-
-    const selectedValue = cleanText(
-      selectedCustomizations[name]
-    );
-
-    const validOptions = (
-      customization.options || []
-    ).map(String);
-
-    if (
-      !selectedValue ||
-      !validOptions.includes(selectedValue)
-    ) {
-      throw requestError(
-        `Seleccioná una opción válida para ${name} en ${product.name}.`
-      );
-    }
-
-    normalized[name] = selectedValue;
-  }
-
-  return normalized;
-}
-
 async function getNextOrderNumber() {
-  const counter =
+  const existingCounter =
     await Counter.findOneAndUpdate(
       {
         name: "orders",
@@ -252,21 +339,71 @@ async function getNextOrderNumber() {
       },
       {
         new: true,
-        upsert: true,
-        setDefaultsOnInsert: true,
+        runValidators: true,
       }
     );
 
-  /*
-    Si se creó por primera vez con valor 1,
-    lo llevamos a 1000.
-  */
-  if (counter.value < 1000) {
-    counter.value = 1000;
-    await counter.save();
+  if (existingCounter) {
+    return existingCounter.value;
   }
 
-  return counter.value;
+  try {
+    const newCounter = await Counter.create({
+      name: "orders",
+      value: 1000,
+    });
+
+    return newCounter.value;
+  } catch (error) {
+    /*
+      Si dos órdenes intentan crear el contador
+      al mismo tiempo, una vuelve a incrementarlo.
+    */
+    if (error?.code !== 11000) {
+      throw error;
+    }
+
+    const retriedCounter =
+      await Counter.findOneAndUpdate(
+        {
+          name: "orders",
+        },
+        {
+          $inc: {
+            value: 1,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!retriedCounter) {
+      throw new Error(
+        "No se pudo generar el número de orden."
+      );
+    }
+
+    return retriedCounter.value;
+  }
+}
+
+function serializeUser(user) {
+  if (!user) {
+    return null;
+  }
+
+  if (typeof user !== "object" || !user._id) {
+    return user.toString();
+  }
+
+  return {
+    _id: user._id.toString(),
+    name: user.name || "",
+    lastName: user.lastName || "",
+    email: user.email || "",
+  };
 }
 
 function serializeOrder(order) {
@@ -274,13 +411,64 @@ function serializeOrder(order) {
     _id: order._id.toString(),
     orderNumber: order.orderNumber,
     status: order.status,
-    user: order.user
-      ? order.user.toString()
-      : null,
+    user: serializeUser(order.user),
 
-    customerData: order.customerData,
-    delivery: order.delivery,
-    payment: order.payment,
+    customerData: {
+      name: order.customerData?.name || "",
+      lastName:
+        order.customerData?.lastName || "",
+      email: order.customerData?.email || "",
+      phone: order.customerData?.phone || "",
+      observations:
+        order.customerData?.observations || "",
+    },
+
+    delivery: {
+      method: order.delivery?.method || "",
+      pointCode:
+        order.delivery?.pointCode || "",
+      label: order.delivery?.label || "",
+      address: order.delivery?.address || "",
+      city: order.delivery?.city || "",
+      postalCode:
+        order.delivery?.postalCode || "",
+      zone: order.delivery?.zone || "",
+      schedule:
+        order.delivery?.schedule || "",
+      pickupDate:
+        order.delivery?.pickupDate || "",
+      pickupTimeSlot:
+        order.delivery?.pickupTimeSlot || "",
+      shippingCost:
+        Number(
+          order.delivery?.shippingCost
+        ) || 0,
+    },
+
+    payment: {
+      method: order.payment?.method || "",
+      status: order.payment?.status || "",
+      discountPercentage:
+        Number(
+          order.payment?.discountPercentage
+        ) || 0,
+      discountAmount:
+        Number(
+          order.payment?.discountAmount
+        ) || 0,
+      surchargePercentage:
+        Number(
+          order.payment?.surchargePercentage
+        ) || 0,
+      surchargeAmount:
+        Number(
+          order.payment?.surchargeAmount
+        ) || 0,
+      installments:
+        Number(
+          order.payment?.installments
+        ) || 1,
+    },
 
     products: (order.products || []).map(
       (item) => ({
@@ -298,6 +486,8 @@ function serializeOrder(order) {
     subtotal: order.subtotal,
     shippingCost: order.shippingCost,
     discountAmount: order.discountAmount,
+    surchargeAmount:
+      order.surchargeAmount || 0,
     total: order.total,
 
     createdAt:
@@ -313,6 +503,10 @@ export async function GET() {
     await connectDB();
 
     const orders = await Order.find()
+      .populate({
+        path: "user",
+        select: "name lastName email",
+      })
       .sort({
         createdAt: -1,
       })
@@ -323,7 +517,10 @@ export async function GET() {
       orders: orders.map(serializeOrder),
     });
   } catch (error) {
-    console.error("Error GET órdenes:", error);
+    console.error(
+      "Error GET órdenes:",
+      error
+    );
 
     return Response.json(
       {
@@ -400,8 +597,10 @@ export async function POST(request) {
 
     if (
       productIds.some(
-        (id) =>
-          !mongoose.Types.ObjectId.isValid(id)
+        (productId) =>
+          !mongoose.Types.ObjectId.isValid(
+            productId
+          )
       )
     ) {
       throw requestError(
@@ -442,10 +641,12 @@ export async function POST(request) {
         );
       }
 
+      const previousQuantity =
+        quantitiesByProduct.get(productId) || 0;
+
       quantitiesByProduct.set(
         productId,
-        (quantitiesByProduct.get(productId) ||
-          0) + quantity
+        previousQuantity + quantity
       );
     }
 
@@ -474,10 +675,12 @@ export async function POST(request) {
 
     const orderItems = rawItems.map(
       (item) => {
+        const productId = cleanText(
+          item.productId
+        );
+
         const product =
-          productsById.get(
-            cleanText(item.productId)
-          );
+          productsById.get(productId);
 
         const quantity = Number(
           item.quantity
@@ -516,6 +719,15 @@ export async function POST(request) {
       subtotal
     );
 
+    /*
+      La fecha y el horario pertenecen a la entrega,
+      por eso se solicitan para cualquier retiro,
+      sea efectivo, transferencia o tarjeta.
+    */
+    if (delivery.method !== "shipping") {
+      validatePickupSchedule(delivery);
+    }
+
     const payment = normalizePayment(
       body.payment,
       subtotal,
@@ -528,10 +740,14 @@ export async function POST(request) {
     const discountAmount =
       payment.discountAmount;
 
+    const surchargeAmount =
+      payment.surchargeAmount;
+
     const total = Math.max(
       0,
       subtotal -
         discountAmount +
+        surchargeAmount +
         shippingCost
     );
 
@@ -549,6 +765,7 @@ export async function POST(request) {
       subtotal,
       shippingCost,
       discountAmount,
+      surchargeAmount,
       total,
     });
 
@@ -557,7 +774,6 @@ export async function POST(request) {
         ok: true,
         message:
           "Compra realizada correctamente.",
-
         order: serializeOrder(order),
       },
       {
@@ -565,12 +781,14 @@ export async function POST(request) {
       }
     );
   } catch (error) {
-    console.error("Error POST orden:", error);
+    console.error(
+      "Error POST orden:",
+      error
+    );
 
     return Response.json(
       {
         ok: false,
-
         message:
           error.message ||
           "No se pudo crear la orden.",

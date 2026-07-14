@@ -4,7 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import User from "@/models/User";
 
-function serializeOrderSummary(order) {
+function serializeOrder(order) {
   const productsCount = (
     order.products || []
   ).reduce(
@@ -16,8 +16,11 @@ function serializeOrderSummary(order) {
 
   return {
     _id: order._id.toString(),
-    orderNumber: order.orderNumber,
-    status: order.status,
+
+    orderNumber:
+      Number(order.orderNumber) || 0,
+
+    status: order.status || "Active",
 
     productsCount,
 
@@ -58,10 +61,12 @@ function serializeOrderSummary(order) {
       Number(order.total) || 0,
 
     createdAt:
-      order.createdAt?.toISOString?.(),
+      order.createdAt?.toISOString?.() ||
+      null,
 
     updatedAt:
-      order.updatedAt?.toISOString?.(),
+      order.updatedAt?.toISOString?.() ||
+      null,
   };
 }
 
@@ -69,26 +74,26 @@ export async function GET(
   request,
   { params }
 ) {
-  const { userId } = await params;
-
-  if (
-    !mongoose.Types.ObjectId.isValid(
-      userId
-    )
-  ) {
-    return Response.json(
-      {
-        ok: false,
-        message:
-          "El ID del usuario no es válido.",
-      },
-      {
-        status: 400,
-      }
-    );
-  }
-
   try {
+    const { userId } = await params;
+
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        userId
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          message:
+            "El ID del usuario no es válido.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     await connectDB();
 
     const userExists = await User.exists({
@@ -120,7 +125,7 @@ export async function GET(
       ok: true,
 
       orders: orders.map(
-        serializeOrderSummary
+        serializeOrder
       ),
     });
   } catch (error) {
@@ -132,6 +137,7 @@ export async function GET(
     return Response.json(
       {
         ok: false,
+
         message:
           "No se pudieron obtener las órdenes.",
 

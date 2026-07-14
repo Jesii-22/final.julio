@@ -1,6 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const GlobalContext = createContext(null);
 
@@ -15,17 +20,98 @@ function createCartItemKey(productId, customizations = {}) {
   return `${productId}-${JSON.stringify(orderedCustomizations)}`;
 }
 
+function addProductWithoutDuplicates(products, newProduct) {
+  const alreadyExists = products.some(
+    (product) => product._id === newProduct._id
+  );
+
+  if (alreadyExists) {
+    return products;
+  }
+
+  return [...products, newProduct];
+}
+
 export function GlobalProvider({ children }) {
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [activeUser, setActiveUser] = useState(null);
+  const [isFavoritesLoading, setIsFavoritesLoading] =
+    useState(false);
+
+  /*
+    Recupera el usuario guardado cuando se actualiza la página.
+  */
+  
+    useEffect(() => {
+  let cancelled = false;
+
+  async function restoreUserSession() {
+    const storedUser = window.localStorage.getItem(
+      "mutuo_activeUser"
+    );
+
+    if (!storedUser) {
+      return;
+    }
+
+    let user;
+
+    try {
+      user = JSON.parse(storedUser);
+    } catch {
+      window.localStorage.removeItem("mutuo_activeUser");
+      return;
+    }
+
+    if (!user?._id) {
+      window.localStorage.removeItem("mutuo_activeUser");
+      return;
+    }
+
+    let persistedFavorites = [];
+
+    try {
+      const response = await fetch(
+        `/api/users/${user._id}/favorites`
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.ok) {
+        persistedFavorites = data.favorites || [];
+      }
+    } catch (error) {
+      console.error(
+        "No se pudieron cargar los favoritos:",
+        error
+      );
+    }
+
+    if (cancelled) {
+      return;
+    }
+
+    setActiveUser(user);
+    setFavorites(persistedFavorites);
+  }
+
+  restoreUserSession();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   function addToCart(
     product,
     selectedCustomizations = {},
     quantity = 1
   ) {
-    const safeQuantity = Math.max(1, Number(quantity) || 1);
+    const safeQuantity = Math.max(
+      1,
+      Number(quantity) || 1
+    );
 
     const itemKey = createCartItemKey(
       product._id,
@@ -43,7 +129,8 @@ export function GlobalProvider({ children }) {
             return item;
           }
 
-          const newQuantity = item.quantity + safeQuantity;
+          const newQuantity =
+            item.quantity + safeQuantity;
 
           return {
             ...item,
@@ -72,7 +159,9 @@ export function GlobalProvider({ children }) {
 
   function removeFromCart(itemKey) {
     setCart((currentCart) =>
-      currentCart.filter((item) => item.itemKey !== itemKey)
+      currentCart.filter(
+        (item) => item.itemKey !== itemKey
+      )
     );
   }
 
@@ -101,42 +190,102 @@ export function GlobalProvider({ children }) {
     setCart([]);
   }
 
-  function addFavorite(product) {
-    setFavorites((currentFavorites) => {
-      const alreadyExists = currentFavorites.some(
-        (favorite) => favorite._id === product._id
+  async function addFavorite(product) {
+    if (!product?._id) {
+      return;
+    }
+
+    setFavorites((currentFavorites) =>
+      addProductWithoutDuplicates(
+        currentFavorites,
+        product
+      )
+    );
+
+    if (!activeUser?._id) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/users/${activeUser._id}/favorites`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId: product._id,
+          }),
+        }
       );
 
-      if (alreadyExists) {
-        return currentFavorites;
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.message ||
+            "No se pudo guardar el favorito."
+        );
       }
 
-      return [...currentFavorites, product];
-    });
+      setFavorites(data.favorites || []);
+    } catch (error) {
+      console.error(
+        "Error al agregar favorito:",
+        error
+      );
+    }
   }
 
-  function removeFavorite(productId) {
+  async function removeFavorite(productId) {
     setFavorites((currentFavorites) =>
       currentFavorites.filter(
         (favorite) => favorite._id !== productId
       )
     );
-  }
 
-  function toggleFavorite(product) {
-    setFavorites((currentFavorites) => {
-      const alreadyExists = currentFavorites.some(
-        (favorite) => favorite._id === product._id
+    if (!activeUser?._id) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/users/${activeUser._id}/favorites/${productId}`,
+        {
+          method: "DELETE",
+        }
       );
 
-      if (alreadyExists) {
-        return currentFavorites.filter(
-          (favorite) => favorite._id !== product._id
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.message ||
+            "No se pudo quitar el favorito."
         );
       }
 
-      return [...currentFavorites, product];
-    });
+      setFavorites(data.favorites || []);
+    } catch (error) {
+      console.error(
+        "Error al quitar favorito:",
+        error
+      );
+    }
+  }
+
+  async function toggleFavorite(product) {
+    const alreadyExists = favorites.some(
+      (favorite) => favorite._id === product._id
+    );
+
+    if (alreadyExists) {
+      await removeFavorite(product._id);
+      return;
+    }
+
+    await addFavorite(product);
   }
 
   function isFavorite(productId) {
@@ -145,12 +294,65 @@ export function GlobalProvider({ children }) {
     );
   }
 
-  function saveActiveUser(user) {
+  async function saveActiveUser(user) {
+    if (!user?._id) {
+      return;
+    }
+
+    const temporaryFavoriteIds = favorites.map(
+      (favorite) => favorite._id
+    );
+
     setActiveUser(user);
+
+    window.localStorage.setItem(
+      "mutuo_activeUser",
+      JSON.stringify(user)
+    );
+
+    setIsFavoritesLoading(true);
+
+    try {
+      const response = await fetch(
+        `/api/users/${user._id}/favorites/sync`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            favoriteIds: temporaryFavoriteIds,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.message ||
+            "No se pudieron sincronizar los favoritos."
+        );
+      }
+
+      setFavorites(data.favorites || []);
+    } catch (error) {
+      console.error(
+        "Error al sincronizar favoritos:",
+        error
+      );
+    } finally {
+      setIsFavoritesLoading(false);
+    }
   }
 
   function logout() {
     setActiveUser(null);
+    setFavorites([]);
+
+    window.localStorage.removeItem(
+      "mutuo_activeUser"
+    );
   }
 
   const cartTotal = cart.reduce(
@@ -167,6 +369,7 @@ export function GlobalProvider({ children }) {
     cart,
     favorites,
     activeUser,
+    isFavoritesLoading,
 
     addToCart,
     removeFromCart,

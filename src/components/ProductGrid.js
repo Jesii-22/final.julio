@@ -18,7 +18,7 @@ function formatPrice(price) {
     style: "currency",
     currency: "ARS",
     maximumFractionDigits: 0,
-  }).format(price);
+  }).format(Number(price) || 0);
 }
 
 export default function ProductGrid({ products = [] }) {
@@ -96,6 +96,30 @@ export default function ProductGrid({ products = [] }) {
                     </Link>
                   )
                 )}
+              </div>
+            ) : null}
+
+            {product.customizations?.length ? (
+              <div className="mt-4 rounded-xl bg-blue-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">
+                  Personalizable
+                </p>
+
+                <div className="mt-2 space-y-1">
+                  {product.customizations.map(
+                    (customization, index) => (
+                      <p
+                        key={`${customization.name}-${index}`}
+                        className="text-xs text-blue-900"
+                      >
+                        <span className="font-semibold">
+                          {customization.name}:
+                        </span>{" "}
+                        {customization.options?.join(", ")}
+                      </p>
+                    )
+                  )}
+                </div>
               </div>
             ) : null}
 

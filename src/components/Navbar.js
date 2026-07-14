@@ -105,7 +105,7 @@ export default function Navbar() {
                   className="rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 hover:bg-orange-100"
                   href="/user"
                 >
-                  {activeUser.name || "Mi cuenta"}
+                 {`${activeUser.name || ""} ${activeUser.lastName || ""}`.trim() ||"Mi cuenta"}
                 </Link>
 
                 <button

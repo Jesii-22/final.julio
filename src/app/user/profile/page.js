@@ -56,6 +56,11 @@ export default function UserProfilePage() {
   const [messageType, setMessageType] =
     useState("");
 
+        const [
+      showSuccessModal,
+      setShowSuccessModal,
+    ] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -212,17 +217,21 @@ export default function UserProfilePage() {
         )
       );
 
-      setMessage(
-        "Datos actualizados correctamente."
-      );
+          setProfile({
+        name: data.user.name || "",
+        lastName: data.user.lastName || "",
+        email: data.user.email || "",
+        phone: data.user.phone || "",
+        address: data.user.address || "",
+        city: data.user.city || "",
+        postalCode:
+          data.user.postalCode || "",
+      });
 
-      setMessageType("success");
+      setMessage("");
+      setMessageType("");
+      setShowSuccessModal(true);
 
-      /*
-        Recargamos para que también se actualice
-        el nombre de la navegación y el Context.
-      */
-      window.location.reload();
     } catch (error) {
       console.error(
         "Error al guardar perfil:",
@@ -426,6 +435,81 @@ export default function UserProfilePage() {
           </button>
         </div>
       </form>
+                        {showSuccessModal ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-5 py-10 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-success-title"
+          >
+            <section className="relative w-full max-w-lg rounded-3xl bg-white p-8 text-center shadow-2xl">
+              <button
+                className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
+                type="button"
+                aria-label="Cerrar mensaje"
+                onClick={() =>
+                  setShowSuccessModal(false)
+                }
+              >
+                ×
+              </button>
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl font-bold text-emerald-700">
+                ✓
+              </div>
+
+              <p className="mt-6 text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
+                Perfil actualizado
+              </p>
+
+              <h2
+                className="mt-3 text-3xl font-bold text-slate-950"
+                id="profile-success-title"
+              >
+                ¡Tus datos fueron guardados!
+              </h2>
+
+              <p className="mt-4 leading-7 text-slate-600">
+                Los vamos a utilizar para completar
+                automáticamente tus próximas compras.
+              </p>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <button
+                  className="rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+                  type="button"
+                  onClick={() =>
+                    window.location.assign("/user")
+                  }
+                >
+                  Volver a mi perfil
+                </button>
+
+                <button
+                  className="rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+                  type="button"
+                  onClick={() =>
+                    window.location.assign("/")
+                  }
+                >
+                  Ver productos
+                </button>
+              </div>
+
+              <button
+                className="mt-5 text-sm font-semibold text-slate-500 hover:text-slate-800"
+                type="button"
+                onClick={() =>
+                  setShowSuccessModal(false)
+                }
+              >
+                Seguir editando
+              </button>
+            </section>
+          </div>
+        ) : null}
+
+
     </main>
   );
 }

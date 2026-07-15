@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ProductPaymentInfo from "@/components/ProductPaymentInfo";
 
 function getProductImageSrc(image) {
   if (!image) {
@@ -71,6 +72,11 @@ export default function ProductGrid({ products = [] }) {
                 {formatPrice(product.price)}
               </p>
             </div>
+                          
+            <ProductPaymentInfo
+                price={product.price}
+                compact
+              />
 
             <p className="mt-2 line-clamp-3 text-sm text-slate-600">
               {product.description || "Sin descripción"}

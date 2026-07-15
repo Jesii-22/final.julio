@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useGlobalContext } from "@/context/GlobalContext";
+import ProductPaymentInfo from "@/components/ProductPaymentInfo";
+
 
 function getProductImageSrc(image) {
   if (!image) {
@@ -156,6 +158,8 @@ export default function ProductDetail({ product }) {
         <p className="mt-4 text-3xl font-semibold text-blue-700">
           {formatPrice(product.price)}
         </p>
+
+          <ProductPaymentInfo price={product.price} />
 
         <p className="mt-6 leading-7 text-slate-600">
           {product.description || "Sin descripción disponible."}

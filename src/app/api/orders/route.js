@@ -1094,6 +1094,11 @@ export async function POST(request) {
           surchargeAmount,
 
           total,
+
+
+          stockDeducted: true,
+          stockRestored: false,
+          
         });
       } catch (orderError) {
         /*

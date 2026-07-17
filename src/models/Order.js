@@ -319,6 +319,27 @@ const orderSchema =
         required: true,
         min: 0,
       },
+
+      /*
+        Indica si el stock fue descontado
+        cuando se creó la orden.
+      */
+      stockDeducted: {
+        type: Boolean,
+        default: false,
+      },
+
+      /*
+        Indica si el stock ya fue devuelto
+        después de cancelar la orden.
+      */
+      stockRestored: {
+        type: Boolean,
+        default: false,
+      },
+
+
+
     },
     {
       timestamps: true,
@@ -330,16 +351,12 @@ if (mongoose.models.Order) {
     mongoose.models.Order.schema;
 
   const needsReload =
-    !schema.path(
-      "delivery.pickupDate"
-    ) ||
-    !schema.path(
-      "delivery.pickupTimeSlot"
-    ) ||
-    !schema.path(
-      "payment.surchargeAmount"
-    ) ||
-    !schema.path("surchargeAmount");
+    !schema.path("delivery.pickupDate") ||
+    !schema.path("delivery.pickupTimeSlot") ||
+    !schema.path("payment.surchargeAmount") ||
+    !schema.path("surchargeAmount") ||
+    !schema.path("stockDeducted") ||
+    !schema.path("stockRestored");
 
   if (needsReload) {
     mongoose.deleteModel("Order");

@@ -152,6 +152,11 @@ export default function DashboardOrderPage() {
   const [successMessage, setSuccessMessage] =
     useState("");
 
+  const [
+  showCancelModal,
+  setShowCancelModal,
+] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -213,89 +218,123 @@ export default function DashboardOrderPage() {
     };
   }, [params?.id]);
 
-  async function handleStatusUpdate() {
-    if (
-      !order ||
-      selectedStatus === order.status
-    ) {
-      return;
-    }
+  async function updateOrderStatus(
+  nextStatus
+) {
+  if (
+    !order ||
+    nextStatus === order.status
+  ) {
+    return false;
+  }
 
-    if (
-      selectedStatus === "Canceled"
-    ) {
-      const confirmed =
-        window.confirm(
-          "¿Confirmás que querés cancelar esta orden? Las unidades volverán al stock y la orden no podrá reactivarse."
-        );
+  setIsSaving(true);
+  setError("");
+  setSuccessMessage("");
 
-      if (!confirmed) {
-        setSelectedStatus(
-          order.status
-        );
+  try {
+    const response = await fetch(
+      `/api/orders/${order._id}`,
+      {
+        method: "PATCH",
 
-        return;
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          status: nextStatus,
+        }),
       }
-    }
+    );
 
-    setIsSaving(true);
-    setError("");
-    setSuccessMessage("");
+    const data =
+      await readJsonResponse(response);
 
-    try {
-      const response = await fetch(
-        `/api/orders/${order._id}`,
-        {
-          method: "PATCH",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            status: selectedStatus,
-          }),
-        }
-      );
-
-      const data =
-        await readJsonResponse(response);
-
-      if (!response.ok || !data.ok) {
-        throw new Error(
-          data.message ||
-            "No se pudo actualizar la orden."
-        );
-      }
-
-      setOrder(data.order);
-      setSelectedStatus(
-        data.order.status
-      );
-
-      setSuccessMessage(
+    if (!response.ok || !data.ok) {
+      throw new Error(
         data.message ||
-          "Estado actualizado correctamente."
-      );
-    } catch (updateError) {
-      console.error(
-        "Error al actualizar la orden:",
-        updateError
-      );
-
-      setError(
-        updateError.message ||
           "No se pudo actualizar la orden."
       );
-
-      setSelectedStatus(
-        order.status
-      );
-    } finally {
-      setIsSaving(false);
     }
+
+    setOrder(data.order);
+
+    setSelectedStatus(
+      data.order.status
+    );
+
+    setSuccessMessage(
+      data.message ||
+        "Estado actualizado correctamente."
+    );
+
+    return true;
+  } catch (updateError) {
+    console.error(
+      "Error al actualizar la orden:",
+      updateError
+    );
+
+    setError(
+      updateError.message ||
+        "No se pudo actualizar la orden."
+    );
+
+    setSelectedStatus(
+      order.status
+    );
+
+    return false;
+  } finally {
+    setIsSaving(false);
   }
+}
+
+async function handleStatusUpdate() {
+  if (
+    !order ||
+    selectedStatus === order.status
+  ) {
+    return;
+  }
+
+  if (
+    selectedStatus === "Canceled"
+  ) {
+    setError("");
+    setSuccessMessage("");
+    setShowCancelModal(true);
+
+    return;
+  }
+
+  await updateOrderStatus(
+    selectedStatus
+  );
+}
+
+async function handleConfirmCancellation() {
+  const wasUpdated =
+    await updateOrderStatus(
+      "Canceled"
+    );
+
+  if (wasUpdated) {
+    setShowCancelModal(false);
+  }
+}
+
+function handleCloseCancelModal() {
+  if (isSaving) {
+    return;
+  }
+
+  setShowCancelModal(false);
+  setSelectedStatus(order.status);
+  setError("");
+}
 
   if (isLoading) {
     return (
@@ -795,6 +834,91 @@ export default function DashboardOrderPage() {
           </div>
         </aside>
       </div>
+
+{showCancelModal ? (
+  <div
+    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 px-5 py-10 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cancel-order-title"
+    onMouseDown={(event) => {
+      if (
+        event.target ===
+        event.currentTarget
+      ) {
+        handleCloseCancelModal();
+      }
+    }}
+  >
+    <section className="w-full max-w-md rounded-3xl border border-blue-100 bg-white p-7 shadow-2xl sm:p-8">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-xl font-bold text-orange-600">
+          !
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+            Confirmar cancelación
+          </p>
+
+          <h2
+            className="mt-2 text-2xl font-bold text-orange-600"
+            id="cancel-order-title"
+          >
+            ¿Cancelar la orden N.º{" "}
+            {order.orderNumber}?
+          </h2>
+        </div>
+      </div>
+
+      <p className="mt-5 leading-7 text-slate-600">
+        La orden quedará cancelada de
+        manera definitiva y no podrá
+        volver a activarse.
+      </p>
+
+      <div className="mt-5 rounded-2xl border border-orange-100 bg-orange-50 p-4">
+        <p className="text-sm font-semibold text-orange-900">
+          Las unidades compradas volverán
+          automáticamente al stock.
+        </p>
+      </div>
+
+      {error ? (
+        <p className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          className="rounded-xl border border-blue-200 px-5 py-3 font-semibold text-blue-700 transition hover:-translate-y-0.5 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isSaving}
+          type="button"
+          onClick={
+            handleCloseCancelModal
+          }
+        >
+          Volver
+        </button>
+
+        <button
+          className="rounded-xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSaving}
+          type="button"
+          onClick={
+            handleConfirmCancellation
+          }
+        >
+          {isSaving
+            ? "Cancelando..."
+            : "Sí, cancelar orden"}
+        </button>
+      </div>
+    </section>
+  </div>
+) : null}
+
     </main>
   );
 }

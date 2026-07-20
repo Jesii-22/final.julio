@@ -1,6 +1,14 @@
 import mongoose from "mongoose";
 
 import {
+  getCurrentUser,
+} from "@/lib/auth";
+
+import {
+  requireAdmin,
+} from "@/lib/apiAuth";
+
+import {
   CARD_INSTALLMENTS,
   PICKUP_POINTS,
   PICKUP_TIME_SLOTS,
@@ -17,7 +25,7 @@ import { connectDB } from "@/lib/mongodb";
 import Counter from "@/models/Counter";
 import Order from "@/models/Order";
 import Product from "@/models/Product";
-import User from "@/models/User";
+// import User from "@/models/User";
 
 function requestError(message, status = 400) {
   const error = new Error(message);
@@ -762,8 +770,15 @@ function serializeOrder(order) {
   };
 }
 
-export async function GET() {
-  try {
+  export async function GET() {
+    try {
+      const authorization =
+        await requireAdmin();
+
+      if (!authorization.ok) {
+        return authorization.response;
+      }
+
     await connectDB();
 
     const orders = await Order.find()
@@ -840,33 +855,16 @@ export async function POST(request) {
 
     await connectDB();
 
-    let userId = null;
+        /*
+      La orden se asocia al usuario de la
+      cookie segura. No confiamos en un ID
+      enviado desde el navegador.
+    */
+    const currentUser =
+      await getCurrentUser();
 
-    if (body.userId) {
-      if (
-        !mongoose.Types.ObjectId.isValid(
-          body.userId
-        )
-      ) {
-        throw requestError(
-          "El ID del usuario es inválido."
-        );
-      }
-
-      const userExists =
-        await User.exists({
-          _id: body.userId,
-        });
-
-      if (!userExists) {
-        throw requestError(
-          "El usuario no fue encontrado.",
-          404
-        );
-      }
-
-      userId = body.userId;
-    }
+    const userId =
+      currentUser?._id || null;
 
     const productIds =
       rawItems.map((item) =>

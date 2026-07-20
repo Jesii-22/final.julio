@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+import {
+  getCurrentUser,
+} from "@/lib/auth";
+
+import {
+  requireAdmin,
+} from "@/lib/apiAuth";
+
+
 import { connectDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import Product from "@/models/Product";
@@ -110,11 +119,49 @@ export async function GET(
       );
     }
 
+        const currentUser =
+        await getCurrentUser();
+
+        if (!currentUser) {
+        return Response.json(
+            {
+            ok: false,
+            message:
+                "Tenés que iniciar sesión.",
+            },
+            {
+            status: 401,
+            }
+        );
+        }
+
     await connectDB();
 
     const order = await Order.findById(
       id
     ).lean();
+
+    const orderUserId =
+  order.user
+    ? order.user.toString()
+    : null;
+
+const canViewOrder =
+  currentUser.role === "admin" ||
+  orderUserId === currentUser._id;
+
+if (!canViewOrder) {
+  return Response.json(
+    {
+      ok: false,
+      message:
+        "No tenés permiso para ver esta orden.",
+    },
+    {
+      status: 403,
+    }
+  );
+}
 
     if (!order) {
       return Response.json(
@@ -162,10 +209,17 @@ export async function GET(
   Cambiar el estado de una orden.
 */
 export async function PATCH(
-  request,
-  { params }
-) {
-  try {
+    request,
+    { params }
+    ) {
+    try {
+        const authorization =
+    await requireAdmin();
+
+    if (!authorization.ok) {
+    return authorization.response;
+    }
+    
     const { id } = await params;
 
     if (

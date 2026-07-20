@@ -36,64 +36,92 @@ export function GlobalProvider({ children }) {
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [activeUser, setActiveUser] = useState(null);
+  
+  const [isSessionReady, setIsSessionReady] =
+  useState(false);
+ 
   const [isFavoritesLoading, setIsFavoritesLoading] =
     useState(false);
 
   /*
-    Recupera el usuario guardado cuando se actualiza la página.
-  */
-  
-    useEffect(() => {
+  Recupera el usuario guardado cuando se actualiza la página.
+  isSessionReady permite saber cuándo terminó esta comprobación.
+*/
+
+useEffect(() => {
   let cancelled = false;
 
   async function restoreUserSession() {
-    const storedUser = window.localStorage.getItem(
-      "mutuo_activeUser"
-    );
-
-    if (!storedUser) {
-      return;
-    }
-
-    let user;
+    /*
+      Evita realizar cambios de estado
+      directamente al comenzar el efecto.
+    */
+    await Promise.resolve();
 
     try {
-      user = JSON.parse(storedUser);
-    } catch {
-      window.localStorage.removeItem("mutuo_activeUser");
-      return;
-    }
+      const storedUser =
+        window.localStorage.getItem(
+          "mutuo_activeUser"
+        );
 
-    if (!user?._id) {
-      window.localStorage.removeItem("mutuo_activeUser");
-      return;
-    }
-
-    let persistedFavorites = [];
-
-    try {
-      const response = await fetch(
-        `/api/users/${user._id}/favorites`
-      );
-
-      const data = await response.json();
-
-      if (response.ok && data.ok) {
-        persistedFavorites = data.favorites || [];
+      if (!storedUser) {
+        return;
       }
-    } catch (error) {
-      console.error(
-        "No se pudieron cargar los favoritos:",
-        error
+
+      let user;
+
+      try {
+        user = JSON.parse(storedUser);
+      } catch {
+        window.localStorage.removeItem(
+          "mutuo_activeUser"
+        );
+
+        return;
+      }
+
+      if (!user?._id) {
+        window.localStorage.removeItem(
+          "mutuo_activeUser"
+        );
+
+        return;
+      }
+
+      let persistedFavorites = [];
+
+      try {
+        const response = await fetch(
+          `/api/users/${user._id}/favorites`
+        );
+
+        const data =
+          await response.json();
+
+        if (response.ok && data.ok) {
+          persistedFavorites =
+            data.favorites || [];
+        }
+      } catch (error) {
+        console.error(
+          "No se pudieron cargar los favoritos:",
+          error
+        );
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setActiveUser(user);
+      setFavorites(
+        persistedFavorites
       );
+    } finally {
+      if (!cancelled) {
+        setIsSessionReady(true);
+      }
     }
-
-    if (cancelled) {
-      return;
-    }
-
-    setActiveUser(user);
-    setFavorites(persistedFavorites);
   }
 
   restoreUserSession();
@@ -366,10 +394,11 @@ export function GlobalProvider({ children }) {
   );
 
   const value = {
-    cart,
-    favorites,
-    activeUser,
-    isFavoritesLoading,
+  cart,
+  favorites,
+  activeUser,
+  isSessionReady,
+  isFavoritesLoading,
 
     addToCart,
     removeFromCart,

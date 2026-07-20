@@ -837,7 +837,7 @@ function handleCloseCancelModal() {
 
 {showCancelModal ? (
   <div
-    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 px-5 py-10 backdrop-blur-sm"
+    className="fixed inset-0 z-100 flex items-center justify-center bg-slate-950/40 px-5 py-10 backdrop-blur-sm"
     role="dialog"
     aria-modal="true"
     aria-labelledby="cancel-order-title"

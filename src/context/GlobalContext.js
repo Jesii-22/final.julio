@@ -9,20 +9,32 @@ import {
 
 const GlobalContext = createContext(null);
 
-function createCartItemKey(productId, customizations = {}) {
-  const orderedCustomizations = Object.keys(customizations)
-    .sort()
-    .reduce((result, key) => {
-      result[key] = customizations[key];
-      return result;
-    }, {});
+function createCartItemKey(
+  productId,
+  customizations = {}
+) {
+  const orderedCustomizations =
+    Object.keys(customizations)
+      .sort()
+      .reduce((result, key) => {
+        result[key] =
+          customizations[key];
 
-  return `${productId}-${JSON.stringify(orderedCustomizations)}`;
+        return result;
+      }, {});
+
+  return `${productId}-${JSON.stringify(
+    orderedCustomizations
+  )}`;
 }
 
-function addProductWithoutDuplicates(products, newProduct) {
+function addProductWithoutDuplicates(
+  products,
+  newProduct
+) {
   const alreadyExists = products.some(
-    (product) => product._id === newProduct._id
+    (product) =>
+      product._id === newProduct._id
   );
 
   if (alreadyExists) {
@@ -32,104 +44,132 @@ function addProductWithoutDuplicates(products, newProduct) {
   return [...products, newProduct];
 }
 
-export function GlobalProvider({ children }) {
+export function GlobalProvider({
+  children,
+}) {
   const [cart, setCart] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [activeUser, setActiveUser] = useState(null);
-  
-  const [isSessionReady, setIsSessionReady] =
-  useState(false);
- 
-  const [isFavoritesLoading, setIsFavoritesLoading] =
-    useState(false);
+
+  const [favorites, setFavorites] =
+    useState([]);
+
+  const [activeUser, setActiveUser] =
+    useState(null);
+
+  const [
+    isSessionReady,
+    setIsSessionReady,
+  ] = useState(false);
+
+  const [
+    isFavoritesLoading,
+    setIsFavoritesLoading,
+  ] = useState(false);
 
   /*
-  Recupera el usuario guardado cuando se actualiza la página.
-  isSessionReady permite saber cuándo terminó esta comprobación.
-*/
+    Restaura la sesión desde la cookie
+    guardada en el servidor.
+  */
+  useEffect(() => {
+    let cancelled = false;
 
-useEffect(() => {
-  let cancelled = false;
-
-  async function restoreUserSession() {
-    /*
-      Evita realizar cambios de estado
-      directamente al comenzar el efecto.
-    */
-    await Promise.resolve();
-
-    try {
-      const storedUser =
-        window.localStorage.getItem(
-          "mutuo_activeUser"
-        );
-
-      if (!storedUser) {
-        return;
-      }
-
-      let user;
-
-      try {
-        user = JSON.parse(storedUser);
-      } catch {
-        window.localStorage.removeItem(
-          "mutuo_activeUser"
-        );
-
-        return;
-      }
-
-      if (!user?._id) {
-        window.localStorage.removeItem(
-          "mutuo_activeUser"
-        );
-
-        return;
-      }
-
-      let persistedFavorites = [];
-
+    async function restoreUserSession() {
       try {
         const response = await fetch(
-          `/api/users/${user._id}/favorites`
+          "/api/users/session",
+          {
+            cache: "no-store",
+          }
         );
+
+        if (!response.ok) {
+          window.localStorage.removeItem(
+            "mutuo_activeUser"
+          );
+
+          return;
+        }
 
         const data =
           await response.json();
 
-        if (response.ok && data.ok) {
-          persistedFavorites =
-            data.favorites || [];
+        if (
+          !data.ok ||
+          !data.user?._id
+        ) {
+          window.localStorage.removeItem(
+            "mutuo_activeUser"
+          );
+
+          return;
         }
+
+        const user = data.user;
+
+        let persistedFavorites = [];
+
+        try {
+          const favoritesResponse =
+            await fetch(
+              `/api/users/${user._id}/favorites`,
+              {
+                cache: "no-store",
+              }
+            );
+
+          const favoritesData =
+            await favoritesResponse.json();
+
+          if (
+            favoritesResponse.ok &&
+            favoritesData.ok
+          ) {
+            persistedFavorites =
+              favoritesData.favorites ||
+              [];
+          }
+        } catch (favoritesError) {
+          console.error(
+            "No se pudieron cargar los favoritos:",
+            favoritesError
+          );
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setActiveUser(user);
+
+        setFavorites(
+          persistedFavorites
+        );
+
+        window.localStorage.setItem(
+          "mutuo_activeUser",
+          JSON.stringify(user)
+        );
       } catch (error) {
         console.error(
-          "No se pudieron cargar los favoritos:",
+          "No se pudo restaurar la sesión:",
           error
         );
-      }
 
-      if (cancelled) {
-        return;
-      }
-
-      setActiveUser(user);
-      setFavorites(
-        persistedFavorites
-      );
-    } finally {
-      if (!cancelled) {
-        setIsSessionReady(true);
+        window.localStorage.removeItem(
+          "mutuo_activeUser"
+        );
+      } finally {
+        if (!cancelled) {
+          setIsSessionReady(true);
+        }
       }
     }
-  }
 
-  restoreUserSession();
+    restoreUserSession();
 
-  return () => {
-    cancelled = true;
-  };
-}, []);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function addToCart(
     product,
@@ -141,34 +181,45 @@ useEffect(() => {
       Number(quantity) || 1
     );
 
-    const itemKey = createCartItemKey(
-      product._id,
-      selectedCustomizations
-    );
-
-    setCart((currentCart) => {
-      const existingItem = currentCart.find(
-        (item) => item.itemKey === itemKey
+    const itemKey =
+      createCartItemKey(
+        product._id,
+        selectedCustomizations
       );
 
+    setCart((currentCart) => {
+      const existingItem =
+        currentCart.find(
+          (item) =>
+            item.itemKey === itemKey
+        );
+
       if (existingItem) {
-        return currentCart.map((item) => {
-          if (item.itemKey !== itemKey) {
-            return item;
+        return currentCart.map(
+          (item) => {
+            if (
+              item.itemKey !== itemKey
+            ) {
+              return item;
+            }
+
+            const newQuantity =
+              item.quantity +
+              safeQuantity;
+
+            return {
+              ...item,
+              quantity: newQuantity,
+              subtotal:
+                item.price *
+                newQuantity,
+            };
           }
-
-          const newQuantity =
-            item.quantity + safeQuantity;
-
-          return {
-            ...item,
-            quantity: newQuantity,
-            subtotal: item.price * newQuantity,
-          };
-        });
+        );
       }
 
-      const price = Number(product.price);
+      const price =
+        Number(product.price) || 0;
 
       const newItem = {
         itemKey,
@@ -177,24 +228,34 @@ useEffect(() => {
         image: product.image || "",
         price,
         quantity: safeQuantity,
-        customizations: selectedCustomizations,
-        subtotal: price * safeQuantity,
+        customizations:
+          selectedCustomizations,
+        subtotal:
+          price * safeQuantity,
       };
 
-      return [...currentCart, newItem];
+      return [
+        ...currentCart,
+        newItem,
+      ];
     });
   }
 
   function removeFromCart(itemKey) {
     setCart((currentCart) =>
       currentCart.filter(
-        (item) => item.itemKey !== itemKey
+        (item) =>
+          item.itemKey !== itemKey
       )
     );
   }
 
-  function changeCartQuantity(itemKey, quantity) {
-    const newQuantity = Number(quantity);
+  function changeCartQuantity(
+    itemKey,
+    quantity
+  ) {
+    const newQuantity =
+      Number(quantity);
 
     if (newQuantity <= 0) {
       removeFromCart(itemKey);
@@ -207,7 +268,9 @@ useEffect(() => {
           ? {
               ...item,
               quantity: newQuantity,
-              subtotal: item.price * newQuantity,
+              subtotal:
+                item.price *
+                newQuantity,
             }
           : item
       )
@@ -223,11 +286,12 @@ useEffect(() => {
       return;
     }
 
-    setFavorites((currentFavorites) =>
-      addProductWithoutDuplicates(
-        currentFavorites,
-        product
-      )
+    setFavorites(
+      (currentFavorites) =>
+        addProductWithoutDuplicates(
+          currentFavorites,
+          product
+        )
     );
 
     if (!activeUser?._id) {
@@ -239,25 +303,34 @@ useEffect(() => {
         `/api/users/${activeUser._id}/favorites`,
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
             productId: product._id,
           }),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      if (!response.ok || !data.ok) {
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
         throw new Error(
           data.message ||
             "No se pudo guardar el favorito."
         );
       }
 
-      setFavorites(data.favorites || []);
+      setFavorites(
+        data.favorites || []
+      );
     } catch (error) {
       console.error(
         "Error al agregar favorito:",
@@ -266,11 +339,16 @@ useEffect(() => {
     }
   }
 
-  async function removeFavorite(productId) {
-    setFavorites((currentFavorites) =>
-      currentFavorites.filter(
-        (favorite) => favorite._id !== productId
-      )
+  async function removeFavorite(
+    productId
+  ) {
+    setFavorites(
+      (currentFavorites) =>
+        currentFavorites.filter(
+          (favorite) =>
+            favorite._id !==
+            productId
+        )
     );
 
     if (!activeUser?._id) {
@@ -285,16 +363,22 @@ useEffect(() => {
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      if (!response.ok || !data.ok) {
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
         throw new Error(
           data.message ||
             "No se pudo quitar el favorito."
         );
       }
 
-      setFavorites(data.favorites || []);
+      setFavorites(
+        data.favorites || []
+      );
     } catch (error) {
       console.error(
         "Error al quitar favorito:",
@@ -303,13 +387,21 @@ useEffect(() => {
     }
   }
 
-  async function toggleFavorite(product) {
-    const alreadyExists = favorites.some(
-      (favorite) => favorite._id === product._id
-    );
+  async function toggleFavorite(
+    product
+  ) {
+    const alreadyExists =
+      favorites.some(
+        (favorite) =>
+          favorite._id ===
+          product._id
+      );
 
     if (alreadyExists) {
-      await removeFavorite(product._id);
+      await removeFavorite(
+        product._id
+      );
+
       return;
     }
 
@@ -318,7 +410,8 @@ useEffect(() => {
 
   function isFavorite(productId) {
     return favorites.some(
-      (favorite) => favorite._id === productId
+      (favorite) =>
+        favorite._id === productId
     );
   }
 
@@ -327,11 +420,14 @@ useEffect(() => {
       return;
     }
 
-    const temporaryFavoriteIds = favorites.map(
-      (favorite) => favorite._id
-    );
+    const temporaryFavoriteIds =
+      favorites.map(
+        (favorite) =>
+          favorite._id
+      );
 
     setActiveUser(user);
+    setIsSessionReady(true);
 
     window.localStorage.setItem(
       "mutuo_activeUser",
@@ -345,25 +441,35 @@ useEffect(() => {
         `/api/users/${user._id}/favorites/sync`,
         {
           method: "PUT",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
-            favoriteIds: temporaryFavoriteIds,
+            favoriteIds:
+              temporaryFavoriteIds,
           }),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      if (!response.ok || !data.ok) {
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
         throw new Error(
           data.message ||
             "No se pudieron sincronizar los favoritos."
         );
       }
 
-      setFavorites(data.favorites || []);
+      setFavorites(
+        data.favorites || []
+      );
     } catch (error) {
       console.error(
         "Error al sincronizar favoritos:",
@@ -374,31 +480,53 @@ useEffect(() => {
     }
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await fetch(
+        "/api/users/logout",
+        {
+          method: "POST",
+        }
+      );
+    } catch (error) {
+      console.error(
+        "No se pudo cerrar la sesión en el servidor:",
+        error
+      );
+    }
+
     setActiveUser(null);
     setFavorites([]);
+    setCart([]);
 
     window.localStorage.removeItem(
       "mutuo_activeUser"
     );
+
+    window.location.assign("/");
   }
 
   const cartTotal = cart.reduce(
-    (total, item) => total + item.subtotal,
+    (total, item) =>
+      total +
+      Number(item.subtotal || 0),
     0
   );
 
-  const cartItemsCount = cart.reduce(
-    (total, item) => total + item.quantity,
-    0
-  );
+  const cartItemsCount =
+    cart.reduce(
+      (total, item) =>
+        total +
+        Number(item.quantity || 0),
+      0
+    );
 
   const value = {
-  cart,
-  favorites,
-  activeUser,
-  isSessionReady,
-  isFavoritesLoading,
+    cart,
+    favorites,
+    activeUser,
+    isSessionReady,
+    isFavoritesLoading,
 
     addToCart,
     removeFromCart,
@@ -418,14 +546,17 @@ useEffect(() => {
   };
 
   return (
-    <GlobalContext.Provider value={value}>
+    <GlobalContext.Provider
+      value={value}
+    >
       {children}
     </GlobalContext.Provider>
   );
 }
 
 export function useGlobalContext() {
-  const context = useContext(GlobalContext);
+  const context =
+    useContext(GlobalContext);
 
   if (!context) {
     throw new Error(

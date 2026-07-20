@@ -5,7 +5,7 @@ import Order from "@/models/Order";
 import Product from "@/models/Product";
 import User from "@/models/User";
 
-const LOW_STOCK_LIMIT = 5;
+const LOW_STOCK_LIMIT = 1;
 
 function formatPrice(price) {
   return new Intl.NumberFormat("es-AR", {
@@ -79,13 +79,14 @@ async function getDashboardData() {
       0
     );
 
-    const [
-      totalOrders,
-      activeOrders,
-      registeredUsers,
-      lowStockProducts,
-      latestOrders,
-      monthSalesResult,
+        const [
+    totalOrders,
+    activeOrders,
+    registeredUsers,
+    latestUsers,
+    lowStockProducts,
+    latestOrders,
+    monthSalesResult,
     ] = await Promise.all([
       Order.countDocuments(),
 
@@ -94,6 +95,16 @@ async function getDashboardData() {
       }),
 
       User.countDocuments(),
+
+            User.find()
+        .select(
+            "name lastName email createdAt"
+        )
+        .sort({
+            createdAt: -1,
+        })
+        .limit(5)
+        .lean(),
 
       Product.find({
         stock: {
@@ -149,13 +160,14 @@ async function getDashboardData() {
       ) || 0;
 
     return {
-      ok: true,
-      totalOrders,
-      activeOrders,
-      registeredUsers,
-      lowStockProducts,
-      latestOrders,
-      monthSales,
+    ok: true,
+    totalOrders,
+    activeOrders,
+    registeredUsers,
+    latestUsers,
+    lowStockProducts,
+    latestOrders,
+    monthSales,
     };
   } catch (error) {
     console.error(
@@ -190,14 +202,15 @@ export default async function DashboardSummary() {
     );
   }
 
-  const {
-    totalOrders,
-    activeOrders,
-    registeredUsers,
-    lowStockProducts,
-    latestOrders,
-    monthSales,
-  } = dashboardData;
+    const {
+        totalOrders,
+        activeOrders,
+        registeredUsers,
+        latestUsers,
+        lowStockProducts,
+        latestOrders,
+        monthSales,
+} = dashboardData;
 
   const summaryCards = [
       {
@@ -442,6 +455,87 @@ export default async function DashboardSummary() {
             )}
           </article>
         </div>
+
+    <article className="mt-8 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-lg">
+    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+            Comunidad Mutuo
+        </p>
+
+        <h3 className="mt-2 text-2xl font-bold text-orange-600">
+            Últimos usuarios registrados
+        </h3>
+
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+            Las cinco cuentas creadas más
+            recientemente en la tienda.
+        </p>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-5 py-3 text-center">
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+            Total de usuarios
+        </p>
+
+        <p className="mt-1 text-2xl font-bold text-orange-600">
+            {registeredUsers}
+        </p>
+        </div>
+    </div>
+
+    {latestUsers.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-blue-200 bg-blue-50/50 p-8 text-center">
+        <p className="font-semibold text-blue-900">
+            Todavía no hay usuarios
+        </p>
+
+        <p className="mt-2 text-sm text-blue-700">
+            Las nuevas cuentas aparecerán en
+            esta sección.
+        </p>
+        </div>
+    ) : (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {latestUsers.map((user) => {
+            const fullName = [
+            user.name,
+            user.lastName,
+            ]
+            .filter(Boolean)
+            .join(" ");
+
+            return (
+            <article
+                key={user._id.toString()}
+                className="rounded-2xl border border-blue-100 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+            >
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-lg font-bold uppercase text-orange-600">
+                {user.name?.charAt(0) || "U"}
+                </div>
+
+                <p className="mt-4 font-bold text-slate-950">
+                {fullName ||
+                    "Usuario de Mutuo"}
+                </p>
+
+                <p className="mt-2 break-all text-sm text-blue-700">
+                {user.email}
+                </p>
+
+                <p className="mt-4 text-xs font-medium text-slate-500">
+                Registro:{" "}
+                {formatDate(
+                    user.createdAt
+                )}
+                </p>
+            </article>
+            );
+        })}
+        </div>
+    )}
+    </article>
+
       </section>
     );
 }

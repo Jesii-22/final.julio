@@ -50,7 +50,7 @@ export default function LoginPage() {
         return;
       }
 
-      saveActiveUser(data.user);
+      await saveActiveUser(data.user); 
       setMessage("Sesión iniciada correctamente.");
 
       router.push("/");

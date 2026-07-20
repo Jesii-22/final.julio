@@ -63,13 +63,15 @@ function getStatusData(status) {
   );
 }
 
-export default async function DashboardSummary() {
+async function getDashboardData() {
   try {
     await connectDB();
 
-    const startOfMonth = new Date();
+    const startOfMonth =
+      new Date();
 
     startOfMonth.setDate(1);
+
     startOfMonth.setHours(
       0,
       0,
@@ -146,7 +148,58 @@ export default async function DashboardSummary() {
         monthSalesResult[0]?.total
       ) || 0;
 
-    const summaryCards = [
+    return {
+      ok: true,
+      totalOrders,
+      activeOrders,
+      registeredUsers,
+      lowStockProducts,
+      latestOrders,
+      monthSales,
+    };
+  } catch (error) {
+    console.error(
+      "Error al cargar el resumen del dashboard:",
+      error
+    );
+
+    return {
+      ok: false,
+    };
+  }
+}
+
+
+
+export default async function DashboardSummary() {
+  const dashboardData =
+    await getDashboardData();
+
+  if (!dashboardData.ok) {
+    return (
+      <section className="mt-10 rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
+        <h2 className="text-2xl font-bold text-red-800">
+          No se pudo cargar el resumen
+        </h2>
+
+        <p className="mt-3 text-red-700">
+          Revisá que MongoDB esté iniciado
+          y volvé a cargar la página.
+        </p>
+      </section>
+    );
+  }
+
+  const {
+    totalOrders,
+    activeOrders,
+    registeredUsers,
+    lowStockProducts,
+    latestOrders,
+    monthSales,
+  } = dashboardData;
+
+  const summaryCards = [
       {
         label: "Órdenes totales",
         value: totalOrders,
@@ -391,23 +444,4 @@ export default async function DashboardSummary() {
         </div>
       </section>
     );
-  } catch (error) {
-    console.error(
-      "Error al cargar el resumen del dashboard:",
-      error
-    );
-
-    return (
-      <section className="mt-10 rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
-        <h2 className="text-2xl font-bold text-red-800">
-          No se pudo cargar el resumen
-        </h2>
-
-        <p className="mt-3 text-red-700">
-          Revisá que MongoDB esté iniciado y
-          volvé a cargar la página.
-        </p>
-      </section>
-    );
-  }
 }

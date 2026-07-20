@@ -2,34 +2,109 @@ import mongoose from "mongoose";
 
 import { connectDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
-import User from "@/models/User";
+
+export const dynamic = "force-dynamic";
 
 function serializeOrder(order) {
-  const productsCount = (
-    order.products || []
-  ).reduce(
-    (total, product) =>
-      total +
-      Number(product.quantity || 0),
-    0
-  );
-
   return {
     _id: order._id.toString(),
 
     orderNumber:
       Number(order.orderNumber) || 0,
 
-    status: order.status || "Active",
+    status:
+      order.status || "Active",
 
-    productsCount,
+    user: order.user
+      ? order.user.toString()
+      : null,
+
+    customerData: {
+      name:
+        order.customerData?.name || "",
+
+      lastName:
+        order.customerData?.lastName || "",
+
+      email:
+        order.customerData?.email || "",
+
+      phone:
+        order.customerData?.phone || "",
+
+      observations:
+        order.customerData
+          ?.observations || "",
+    },
+
+    delivery: {
+      method:
+        order.delivery?.method || "",
+
+      pointCode:
+        order.delivery?.pointCode || "",
+
+      label:
+        order.delivery?.label || "",
+
+      address:
+        order.delivery?.address || "",
+
+      city:
+        order.delivery?.city || "",
+
+      postalCode:
+        order.delivery?.postalCode || "",
+
+      zone:
+        order.delivery?.zone || "",
+
+      schedule:
+        order.delivery?.schedule || "",
+
+      pickupDate:
+        order.delivery?.pickupDate || "",
+
+      pickupTimeSlot:
+        order.delivery
+          ?.pickupTimeSlot || "",
+
+      shippingCost:
+        Number(
+          order.delivery?.shippingCost
+        ) || 0,
+    },
 
     payment: {
       method:
         order.payment?.method || "",
 
       status:
-        order.payment?.status || "",
+        order.payment?.status ||
+        "Pending",
+
+      discountPercentage:
+        Number(
+          order.payment
+            ?.discountPercentage
+        ) || 0,
+
+      discountAmount:
+        Number(
+          order.payment?.discountAmount
+        ) || 0,
+
+      surchargePercentage:
+        Number(
+          order.payment
+            ?.surchargePercentage
+        ) || 0,
+
+      surchargeAmount:
+        Number(
+          order.payment
+            ?.surchargeAmount
+        ) || 0,
 
       installments:
         Number(
@@ -37,13 +112,31 @@ function serializeOrder(order) {
         ) || 1,
     },
 
-    delivery: {
-      method:
-        order.delivery?.method || "",
+    products: (
+      order.products || []
+    ).map((product) => ({
+      productId: product.productId
+        ? product.productId.toString()
+        : "",
 
-      label:
-        order.delivery?.label || "",
-    },
+      name:
+        product.name || "",
+
+      image:
+        product.image || "",
+
+      price:
+        Number(product.price) || 0,
+
+      quantity:
+        Number(product.quantity) || 0,
+
+      customizations:
+        product.customizations || {},
+
+      subtotal:
+        Number(product.subtotal) || 0,
+    })),
 
     subtotal:
       Number(order.subtotal) || 0,
@@ -60,13 +153,23 @@ function serializeOrder(order) {
     total:
       Number(order.total) || 0,
 
-    createdAt:
-      order.createdAt?.toISOString?.() ||
-      null,
+    stockDeducted:
+      order.stockDeducted === true,
 
-    updatedAt:
-      order.updatedAt?.toISOString?.() ||
-      null,
+    stockRestored:
+      order.stockRestored === true,
+
+    createdAt: order.createdAt
+      ? new Date(
+          order.createdAt
+        ).toISOString()
+      : null,
+
+    updatedAt: order.updatedAt
+      ? new Date(
+          order.updatedAt
+        ).toISOString()
+      : null,
   };
 }
 
@@ -86,7 +189,7 @@ export async function GET(
         {
           ok: false,
           message:
-            "El ID del usuario no es válido.",
+            "El usuario indicado no es válido.",
         },
         {
           status: 400,
@@ -95,23 +198,6 @@ export async function GET(
     }
 
     await connectDB();
-
-    const userExists = await User.exists({
-      _id: userId,
-    });
-
-    if (!userExists) {
-      return Response.json(
-        {
-          ok: false,
-          message:
-            "El usuario no fue encontrado.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
 
     const orders = await Order.find({
       user: userId,
@@ -130,7 +216,7 @@ export async function GET(
     });
   } catch (error) {
     console.error(
-      "Error GET órdenes del usuario:",
+      "Error al obtener las órdenes del usuario:",
       error
     );
 
@@ -139,7 +225,7 @@ export async function GET(
         ok: false,
 
         message:
-          "No se pudieron obtener las órdenes.",
+          "No se pudieron cargar las compras del usuario.",
 
         error:
           process.env.NODE_ENV ===

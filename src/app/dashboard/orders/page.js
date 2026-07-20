@@ -134,6 +134,29 @@ async function readJsonResponse(response) {
   }
 }
 
+async function fetchOrdersFromApi(signal) {
+  const response = await fetch(
+    "/api/orders",
+    {
+      cache: "no-store",
+      signal,
+    }
+  );
+
+  const data =
+    await readJsonResponse(response);
+
+  if (!response.ok || !data.ok) {
+    throw new Error(
+      data.message ||
+        "No se pudieron cargar las órdenes."
+    );
+  }
+
+  return data.orders || [];
+}
+
+
 export default function DashboardOrdersPage() {
   const [orders, setOrders] =
     useState([]);
@@ -150,47 +173,83 @@ export default function DashboardOrdersPage() {
   const [statusFilter, setStatusFilter] =
     useState("all");
 
-  async function loadOrders() {
-    setIsLoading(true);
-    setError("");
+ async function loadOrders() {
+  setIsLoading(true);
+  setError("");
 
+  try {
+    const nextOrders =
+      await fetchOrdersFromApi();
+
+    setOrders(nextOrders);
+  } catch (loadError) {
+    console.error(
+      "Error al cargar las órdenes:",
+      loadError
+    );
+
+    setError(
+      loadError.message ||
+        "No se pudieron cargar las órdenes."
+    );
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+useEffect(() => {
+  const controller =
+    new AbortController();
+
+  async function loadInitialOrders() {
     try {
-      const response = await fetch(
-        "/api/orders",
-        {
-          cache: "no-store",
-        }
-      );
-
-      const data =
-        await readJsonResponse(response);
-
-      if (!response.ok || !data.ok) {
-        throw new Error(
-          data.message ||
-            "No se pudieron cargar las órdenes."
+      const nextOrders =
+        await fetchOrdersFromApi(
+          controller.signal
         );
+
+      if (
+        !controller.signal.aborted
+      ) {
+        setOrders(nextOrders);
+      }
+    } catch (loadError) {
+      if (
+        loadError.name ===
+        "AbortError"
+      ) {
+        return;
       }
 
-      setOrders(data.orders || []);
-    } catch (loadError) {
       console.error(
         "Error al cargar las órdenes:",
         loadError
       );
 
-      setError(
-        loadError.message ||
-          "No se pudieron cargar las órdenes."
-      );
+      if (
+        !controller.signal.aborted
+      ) {
+        setError(
+          loadError.message ||
+            "No se pudieron cargar las órdenes."
+        );
+      }
     } finally {
-      setIsLoading(false);
+      if (
+        !controller.signal.aborted
+      ) {
+        setIsLoading(false);
+      }
     }
   }
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  loadInitialOrders();
+
+  return () => {
+    controller.abort();
+  };
+}, []);
+
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = search

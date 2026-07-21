@@ -22,6 +22,12 @@ const VALID_STATUSES = [
   "Canceled",
 ];
 
+const VALID_PAYMENT_STATUSES = [
+  "Pending",
+  "Paid",
+  "Rejected",
+];
+
 function serializeOrder(order) {
   if (!order) {
     return null;
@@ -238,6 +244,77 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+
+        /*
+    Actualizar solamente el estado
+    del pago de la orden.
+    */
+    if (
+    body.paymentStatus !== undefined
+    ) {
+    const nextPaymentStatus = String(
+        body.paymentStatus || ""
+    ).trim();
+
+    if (
+        !VALID_PAYMENT_STATUSES.includes(
+        nextPaymentStatus
+        )
+    ) {
+        return Response.json(
+        {
+            ok: false,
+            message:
+            "El estado del pago no es válido.",
+        },
+        {
+            status: 400,
+        }
+        );
+    }
+
+    await connectDB();
+
+    const updatedOrder =
+        await Order.findByIdAndUpdate(
+        id,
+
+        {
+            $set: {
+            "payment.status":
+                nextPaymentStatus,
+            },
+        },
+
+        {
+            returnDocument: "after",
+            runValidators: true,
+        }
+        ).lean();
+
+    if (!updatedOrder) {
+        return Response.json(
+        {
+            ok: false,
+            message:
+            "La orden no fue encontrada.",
+        },
+        {
+            status: 404,
+        }
+        );
+    }
+
+    return Response.json({
+        ok: true,
+        message:
+        "Estado del pago actualizado correctamente.",
+        order:
+        serializeOrder(updatedOrder),
+    });
+    }
+
 
     const nextStatus = String(
       body.status || ""

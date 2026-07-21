@@ -32,6 +32,23 @@ const STATUS_OPTIONS = [
   },
 ];
 
+
+const PAYMENT_STATUS_OPTIONS = [
+  {
+    value: "Pending",
+    label: "Pendiente",
+  },
+  {
+    value: "Paid",
+    label: "Pagado",
+  },
+  {
+    value: "Rejected",
+    label: "Rechazado",
+  },
+];
+
+
 function formatPrice(price) {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
@@ -146,6 +163,26 @@ export default function DashboardOrderPage() {
   const [isSaving, setIsSaving] =
     useState(false);
 
+    const [
+    selectedPaymentStatus,
+    setSelectedPaymentStatus,
+    ] = useState("");
+
+    const [
+    isSavingPayment,
+    setIsSavingPayment,
+    ] = useState(false);
+
+    const [
+    paymentSuccessMessage,
+    setPaymentSuccessMessage,
+    ] = useState("");
+
+    const [
+    paymentError,
+    setPaymentError,
+    ] = useState("");    
+
   const [error, setError] =
     useState("");
 
@@ -190,7 +227,11 @@ export default function DashboardOrderPage() {
           setOrder(data.order);
           setSelectedStatus(
             data.order.status
-          );
+        );
+        setSelectedPaymentStatus(
+            data.order.payment?.status ||
+                "Pending"
+        );
         }
       } catch (loadError) {
         console.error(
@@ -335,6 +376,82 @@ function handleCloseCancelModal() {
   setSelectedStatus(order.status);
   setError("");
 }
+
+async function handlePaymentStatusUpdate() {
+  const currentPaymentStatus =
+    order?.payment?.status ||
+    "Pending";
+
+  if (
+    !order ||
+    selectedPaymentStatus ===
+      currentPaymentStatus
+  ) {
+    return;
+  }
+
+  setIsSavingPayment(true);
+  setPaymentError("");
+  setPaymentSuccessMessage("");
+
+  try {
+    const response = await fetch(
+      `/api/orders/${order._id}`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          paymentStatus:
+            selectedPaymentStatus,
+        }),
+      }
+    );
+
+    const data =
+      await readJsonResponse(response);
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.message ||
+          "No se pudo actualizar el pago."
+      );
+    }
+
+    setOrder(data.order);
+
+    setSelectedPaymentStatus(
+      data.order.payment?.status ||
+        selectedPaymentStatus
+    );
+
+    setPaymentSuccessMessage(
+      data.message ||
+        "Estado del pago actualizado correctamente."
+    );
+  } catch (updateError) {
+    console.error(
+      "Error al actualizar el pago:",
+      updateError
+    );
+
+    setPaymentError(
+      updateError.message ||
+        "No se pudo actualizar el pago."
+    );
+
+    setSelectedPaymentStatus(
+      currentPaymentStatus
+    );
+  } finally {
+    setIsSavingPayment(false);
+  }
+}
+
 
   if (isLoading) {
     return (
@@ -764,35 +881,88 @@ function handleCloseCancelModal() {
             </span>
           </div>
 
-          <div className="mt-6 rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Medio de pago
-            </p>
+          <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+            Medio de pago
+        </p>
 
-            <p className="mt-2 font-bold text-slate-950">
-              {getPaymentLabel(
-                order.payment?.method
-              )}
-            </p>
+        <p className="mt-2 font-bold text-slate-950">
+            {getPaymentLabel(
+            order.payment?.method
+            )}
+        </p>
 
+        {order.payment?.method ===
+        "card" ? (
             <p className="mt-1 text-sm text-slate-600">
-              Estado:{" "}
-              {getPaymentStatusLabel(
-                order.payment?.status
-              )}
+            {order.payment.installments}{" "}
+            cuota(s)
             </p>
+        ) : null}
 
-            {order.payment?.method ===
-            "card" ? (
-              <p className="mt-1 text-sm text-slate-600">
-                {
-                  order.payment
-                    .installments
-                }{" "}
-                cuota(s)
-              </p>
+        <div className="mt-5 border-t border-blue-100 pt-5">
+            <label>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">
+                Estado del pago
+            </span>
+
+            <select
+                className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+                disabled={isSavingPayment}
+                value={selectedPaymentStatus}
+                onChange={(event) => {
+                setSelectedPaymentStatus(
+                    event.target.value
+                );
+
+                setPaymentError("");
+                setPaymentSuccessMessage("");
+                }}
+            >
+                {PAYMENT_STATUS_OPTIONS.map(
+                (option) => (
+                    <option
+                    key={option.value}
+                    value={option.value}
+                    >
+                    {option.label}
+                    </option>
+                )
+                )}
+            </select>
+            </label>
+
+            <button
+            className="mt-3 w-full rounded-xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={
+                isSavingPayment ||
+                selectedPaymentStatus ===
+                (order.payment?.status ||
+                    "Pending")
+            }
+            type="button"
+            onClick={
+                handlePaymentStatusUpdate
+            }
+            >
+            {isSavingPayment
+                ? "Guardando..."
+                : "Guardar estado del pago"}
+            </button>
+
+            {paymentSuccessMessage ? (
+            <p className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+                {paymentSuccessMessage}
+            </p>
             ) : null}
-          </div>
+
+            {paymentError ? (
+            <p className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-800">
+                {paymentError}
+            </p>
+            ) : null}
+        </div>
+        </div>
 
           {order.payment?.method ===
           "transfer" ? (

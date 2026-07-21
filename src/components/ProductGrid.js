@@ -225,7 +225,7 @@ export default function ProductGrid({
   return (
     <section>
       {showFilters ? (
-        <div className="mb-8 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-8 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg sm:p-6">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">

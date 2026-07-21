@@ -8,10 +8,18 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+
     description: {
       type: String,
       default: "",
       trim: true,
+    },
+
+    icon: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 8,
     },
   },
   {
@@ -20,6 +28,10 @@ const categorySchema = new mongoose.Schema(
 );
 
 const Category =
-  mongoose.models.Category || mongoose.model("Category", categorySchema);
+  mongoose.models.Category ||
+  mongoose.model(
+    "Category",
+    categorySchema
+  );
 
 export default Category;

@@ -40,10 +40,12 @@ export default async function CategoriesPage() {
                   className="group rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:bg-orange-50/50 hover:shadow-lg"
                   href={`/category/${category._id}`}
                 >
-                  <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-lg font-bold text-blue-700 transition group-hover:bg-orange-100 group-hover:text-orange-700">
-                    {category.name
-                      ?.charAt(0)
-                      .toUpperCase() || "C"}
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-3xl font-bold text-blue-700 transition group-hover:scale-110 group-hover:bg-orange-100 group-hover:text-orange-700">
+                      {category.icon ||
+                        category.name
+                          ?.charAt(0)
+                          .toUpperCase() ||
+                        "C"}
                   </div>
 
                   <h2 className="text-xl font-bold text-blue-700 transition group-hover:text-orange-600">

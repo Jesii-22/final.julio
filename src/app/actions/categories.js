@@ -3,93 +3,174 @@
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 
+import { connectDB } from "@/lib/mongodb";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
-import { connectDB } from "@/lib/mongodb";
 
-function getCategoryPayload(formData) {
+function getCategoryPayload(
+  formData
+) {
   return {
-    name: formData.get("name"),
-    description: formData.get("description"),
+    name: String(
+      formData.get("name") || ""
+    ).trim(),
+
+    description: String(
+      formData.get("description") || ""
+    ).trim(),
+
+    icon: String(
+      formData.get("icon") || ""
+    ).trim(),
   };
 }
 
 function revalidateCategoryViews() {
   revalidatePath("/");
+  revalidatePath("/categories");
   revalidatePath("/dashboard");
+  revalidatePath(
+    "/dashboard/products"
+  );
 }
 
-export async function createCategory(_previousState, formData) {
+export async function createCategory(
+  _previousState,
+  formData
+) {
   try {
     await connectDB();
-    await Category.create(getCategoryPayload(formData));
+
+    await Category.create(
+      getCategoryPayload(formData)
+    );
+
     revalidateCategoryViews();
 
-    return { ok: true, message: "Categoria creada." };
+    return {
+      ok: true,
+      message:
+        "Categoría creada correctamente.",
+    };
   } catch (error) {
     return {
       ok: false,
-      message: error.message || "Error al crear la categoria.",
+
+      message:
+        error.message ||
+        "Error al crear la categoría.",
     };
   }
 }
 
-export async function updateCategory(id, _previousState, formData) {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return { ok: false, message: "ID de categoria invalido." };
+export async function updateCategory(
+  id,
+  _previousState,
+  formData
+) {
+  if (
+    !mongoose.Types.ObjectId.isValid(id)
+  ) {
+    return {
+      ok: false,
+      message:
+        "ID de categoría inválido.",
+    };
   }
 
   try {
     await connectDB();
 
-    const category = await Category.findByIdAndUpdate(
-      id,
-      getCategoryPayload(formData),
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const category =
+      await Category.findByIdAndUpdate(
+        id,
+        getCategoryPayload(formData),
+        {
+          returnDocument: "after",
+          runValidators: true,
+        }
+      );
 
     if (!category) {
-      return { ok: false, message: "Categoria no encontrada." };
+      return {
+        ok: false,
+        message:
+          "Categoría no encontrada.",
+      };
     }
 
     revalidateCategoryViews();
-    return { ok: true, message: "Categoria actualizada." };
+
+    return {
+      ok: true,
+      message:
+        "Categoría actualizada correctamente.",
+    };
   } catch (error) {
     return {
       ok: false,
-      message: error.message || "Error al actualizar la categoria.",
+
+      message:
+        error.message ||
+        "Error al actualizar la categoría.",
     };
   }
 }
 
-export async function deleteCategory(id) {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return { ok: false, message: "ID de categoria invalido." };
+export async function deleteCategory(
+  id
+) {
+  if (
+    !mongoose.Types.ObjectId.isValid(id)
+  ) {
+    return {
+      ok: false,
+      message:
+        "ID de categoría inválido.",
+    };
   }
 
   try {
     await connectDB();
 
-    const category = await Category.findByIdAndDelete(id);
+    const category =
+      await Category.findByIdAndDelete(
+        id
+      );
 
     if (!category) {
-      return { ok: false, message: "Categoria no encontrada." };
+      return {
+        ok: false,
+        message:
+          "Categoría no encontrada.",
+      };
     }
 
     await Product.updateMany(
-      { categories: category._id },
-      { $pull: { categories: category._id } }
+      {
+        categories: category._id,
+      },
+      {
+        $pull: {
+          categories: category._id,
+        },
+      }
     );
 
     revalidateCategoryViews();
-    return { ok: true, message: "Categoria eliminada." };
+
+    return {
+      ok: true,
+      message:
+        "Categoría eliminada correctamente.",
+    };
   } catch (error) {
     return {
       ok: false,
-      message: error.message || "Error al eliminar la categoria.",
+
+      message:
+        error.message ||
+        "Error al eliminar la categoría.",
     };
   }
 }

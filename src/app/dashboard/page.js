@@ -35,36 +35,58 @@ const quickActions = [
   },
 ];
 
+const dashboardAreas = [
+  {
+    eyebrow: "Catálogo",
+    title: "Productos y categorías",
+    description:
+      "Administración de artículos, precios y opciones personalizables.",
+  },
+  {
+    eyebrow: "Inventario",
+    title: "Control de stock",
+    description:
+      "Seguimiento de las unidades disponibles de cada producto.",
+  },
+  {
+    eyebrow: "Ventas",
+    title: "Pedidos y entregas",
+    description:
+      "Control de órdenes, pagos, envíos y puntos de retiro.",
+  },
+];
+
 export default function DashboardPage() {
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
-      <section className="overflow-hidden rounded-3xl border border-blue-800/50 bg-blue-900/80 px-6 py-10 text-white shadow-2xl backdrop-blur-md sm:px-10 sm:py-12">
-        <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-300">
-              Administración de Mutuo
-            </p>
+      <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white px-6 py-10 shadow-lg shadow-blue-950/5 sm:px-10 sm:py-12">
+        <div className="max-w-4xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-700">
+            Administración de Mutuo
+          </p>
 
-            <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-orange-400 sm:text-5xl">
-              Gestioná tu ecommerce desde un solo lugar
-            </h1>
+          <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-orange-600 sm:text-5xl">
+            Gestioná tu ecommerce desde
+            un solo lugar
+          </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-blue-100">
-              Administrá el catálogo, las categorías, el stock
-              y las órdenes de compra de los productos de Mutuo.
-            </p>
-          </div>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
+            Administrá el catálogo, las
+            categorías, el stock y las
+            órdenes de compra de los
+            productos de Mutuo.
+          </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              className="inline-flex shrink-0 justify-center rounded-xl border border-blue-300/50 bg-blue-800/50 px-6 py-4 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-lg"
+              className="inline-flex justify-center rounded-xl border border-blue-300 bg-white px-6 py-4 font-semibold text-blue-700 transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md"
               href="/dashboard/products"
             >
               Gestionar catálogo
             </Link>
 
             <Link
-              className="inline-flex shrink-0 justify-center rounded-xl bg-orange-500 px-6 py-4 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg"
+              className="inline-flex justify-center rounded-xl bg-orange-500 px-6 py-4 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md"
               href="/dashboard/orders"
             >
               Administrar órdenes
@@ -73,35 +95,24 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10">
-            <p className="text-sm text-blue-200">
-              Catálogo
-            </p>
+          {dashboardAreas.map((area) => (
+            <article
+              key={area.title}
+              className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:bg-orange-50/40 hover:shadow-sm"
+            >
+              <p className="text-sm font-semibold text-blue-700">
+                {area.eyebrow}
+              </p>
 
-            <p className="mt-2 text-lg font-semibold text-orange-300">
-              Productos y categorías
-            </p>
-          </article>
+              <p className="mt-2 text-lg font-bold text-orange-600">
+                {area.title}
+              </p>
 
-          <article className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10">
-            <p className="text-sm text-blue-200">
-              Inventario
-            </p>
-
-            <p className="mt-2 text-lg font-semibold text-orange-300">
-              Control de stock
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10">
-            <p className="text-sm text-blue-200">
-              Ventas
-            </p>
-
-            <p className="mt-2 text-lg font-semibold text-orange-300">
-              Pedidos y entregas
-            </p>
-          </article>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {area.description}
+              </p>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -118,8 +129,10 @@ export default function DashboardPage() {
           </h2>
 
           <p className="mt-3 max-w-2xl text-slate-600">
-            Accedé rápidamente a las principales secciones
-            de administración y control de Mutuo.
+            Accedé rápidamente a las
+            principales secciones de
+            administración y control de
+            Mutuo.
           </p>
         </div>
 
@@ -138,7 +151,7 @@ export default function DashboardPage() {
               </p>
 
               <Link
-                className="mt-6 inline-flex justify-center rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 transition hover:bg-blue-50 hover:text-blue-800"
+                className="mt-6 inline-flex justify-center rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 transition hover:bg-orange-50 hover:text-orange-700"
                 href={action.href}
               >
                 {action.buttonText}

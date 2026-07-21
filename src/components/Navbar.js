@@ -45,9 +45,7 @@ export default function Navbar() {
         return true;
       }
 
-      return (
-        activeUser?.role === "admin"
-      );
+      return activeUser?.role === "admin";
     });
 
   function isActiveLink(href) {
@@ -71,11 +69,11 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-blue-100 bg-white/95 backdrop-blur">
       <nav className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <Link
-            className="inline-flex items-center text-2xl font-bold tracking-tight text-blue-700 transition hover:text-blue-800"
+            className="inline-flex items-center text-2xl font-bold tracking-tight text-blue-700 transition hover:text-orange-600"
             href="/"
           >
             mutuo
@@ -84,7 +82,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <span className="hidden h-5 w-px bg-slate-300 sm:block" />
+          <span className="hidden h-5 w-px bg-blue-200 sm:block" />
 
           <p className="hidden text-xs text-slate-500 sm:block">
             Objetos funcionales para el hogar
@@ -96,44 +94,39 @@ export default function Navbar() {
             {visibleNavigationLinks.map(
               (link) => {
                 const active =
-                  isActiveLink(
-                    link.href
-                  );
+                  isActiveLink(link.href);
 
                 return (
                   <Link
                     key={link.href}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    className={`rounded-xl px-3 py-2 text-sm font-medium transition duration-200 ${
                       active
                         ? "bg-blue-50 text-blue-700"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                        : "text-slate-700 hover:-translate-y-0.5 hover:bg-orange-50 hover:text-orange-700"
                     }`}
                     href={link.href}
                   >
-                    {getLinkLabel(
-                      link
-                    )}
+                    {getLinkLabel(link)}
                   </Link>
                 );
               }
             )}
           </div>
 
-          <div className="flex items-center gap-2 border-t border-slate-200 pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+          <div className="flex items-center gap-2 border-t border-blue-100 pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
             {activeUser ? (
               <>
                 <Link
-                  className="rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+                  className="rounded-xl bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:-translate-y-0.5 hover:bg-orange-100"
                   href="/user"
                 >
                   {`${activeUser.name || ""} ${
                     activeUser.lastName || ""
-                  }`.trim() ||
-                    "Mi cuenta"}
+                  }`.trim() || "Mi cuenta"}
                 </Link>
 
                 <button
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                  className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-800"
                   type="button"
                   onClick={logout}
                 >
@@ -142,7 +135,7 @@ export default function Navbar() {
               </>
             ) : (
               <Link
-                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-500"
                 href="/login"
               >
                 Iniciar sesión

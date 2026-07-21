@@ -290,7 +290,7 @@ export default function UserProfilePage() {
           Mi cuenta
         </p>
 
-        <h1 className="mt-2 text-4xl font-bold text-slate-950">
+        <h1 className="mt-2 text-4xl font-bold text-blue-700">
           Editar mis datos
         </h1>
 
@@ -302,7 +302,7 @@ export default function UserProfilePage() {
       </div>
 
       <form
-        className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+        className="mt-10 rounded-3xl border border-blue-100 bg-white p-6 shadow-lg shadow-blue-950/5 sm:p-8"
         onSubmit={handleSubmit}
       >
         <div className="grid gap-5 sm:grid-cols-2">
@@ -312,7 +312,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="name"
               value={profile.name}
               onChange={handleChange}
@@ -326,7 +326,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="lastName"
               value={profile.lastName}
               onChange={handleChange}
@@ -340,7 +340,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="email"
               type="email"
               value={profile.email}
@@ -355,7 +355,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="phone"
               placeholder="Ejemplo: 11 2644 4064"
               value={profile.phone}
@@ -369,7 +369,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="address"
               placeholder="Calle y altura"
               value={profile.address}
@@ -383,7 +383,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="city"
               value={profile.city}
               onChange={handleChange}
@@ -396,7 +396,7 @@ export default function UserProfilePage() {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               name="postalCode"
               value={profile.postalCode}
               onChange={handleChange}
@@ -418,14 +418,14 @@ export default function UserProfilePage() {
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Link
-            className="rounded-xl border border-slate-300 px-6 py-3 text-center font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-blue-200 px-6 py-3 text-center font-semibold text-blue-700 transition hover:bg-blue-50"
             href="/user"
           >
             Cancelar
           </Link>
 
           <button
-            className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 disabled:opacity-60"
             disabled={isSaving}
             type="submit"
           >

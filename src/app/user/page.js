@@ -200,64 +200,64 @@ export default function UserPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
-      <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-        <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
-            Mi cuenta
-          </p>
+        <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
+        <div className="grid gap-10 lg:grid-cols-[340px_1fr]">
+          {/* Apliqué tus clases de transición y hover en este aside 👇 */}
+          <aside className="h-fit rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
+              Mi cuenta
+            </p>
 
-          <h1 className="mt-3 text-3xl font-bold text-slate-950">
-            {activeUser.name}{" "}
-            {activeUser.lastName}
-          </h1>
+            <h1 className="mt-3 text-3xl font-bold text-blue-700">
+              {activeUser.name} {activeUser.lastName}
+            </h1>
 
-          <div className="mt-6 space-y-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Email
-              </p>
+            <div className="mt-6 space-y-4">
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Email
+                </p>
 
-              <p className="mt-2 break-all font-medium text-slate-900">
-                {activeUser.email}
-              </p>
+                <p className="mt-2 break-all font-medium text-slate-900">
+                  {activeUser.email}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Órdenes realizadas
+                </p>
+
+                <p className="mt-2 text-2xl font-bold text-blue-700">
+                  {orders.length}
+                </p>
+              </div>
             </div>
 
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Órdenes realizadas
-              </p>
-
-              <p className="mt-2 text-2xl font-bold text-blue-700">
-                {orders.length}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            <Link
-                className="inline-flex w-full justify-center rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+            <div className="mt-6 grid gap-3">
+              <Link
+                className="inline-flex w-full justify-center rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white transition-colors hover:bg-blue-800"
                 href="/user/profile"
-            >
+              >
                 Editar mis datos
-            </Link>
+              </Link>
 
-            <Link
-                className="inline-flex w-full justify-center rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+              <Link
+                className="inline-flex w-full justify-center rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-700 transition-colors hover:bg-blue-50"
                 href="/favorites"
-            >
+              >
                 Ver mis favoritos
-            </Link>
-        </div>
-        </aside>
-
+              </Link>
+            </div>
+          </aside>
+        
         <section>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
               Historial
             </p>
 
-            <h2 className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
+            <h2 className="mt-2 text-4xl font-bold tracking-tight text-blue-700">
               Mis compras
             </h2>
 
@@ -313,12 +313,12 @@ export default function UserPage() {
                 return (
                   <article
                     key={order._id}
-                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                    className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
                   >
                     <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
                       <div>
                         <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="text-2xl font-bold text-slate-950">
+                          <h3 className="text-2xl font-bold text-orange-600">
                             Orden N.º{" "}
                             {order.orderNumber}
                           </h3>
@@ -387,7 +387,7 @@ export default function UserPage() {
 
                     <div className="mt-5 flex justify-end">
                       <Link
-                        className="rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+                        className="rounded-xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600"
                         href={`/user/order/${order._id}`}
                       >
                         Ver detalle

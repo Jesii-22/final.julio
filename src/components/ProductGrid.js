@@ -407,7 +407,7 @@ export default function ProductGrid({
                 className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
               >
                 <Link
-                  className="block"
+                  className="text-3xl font-bold text-orange-600 transition hover:text-blue-700 sm:text-2xl"
                   href={`/product/${product._id}`}
                 >
                   <div className="relative aspect-4/3 bg-slate-100">

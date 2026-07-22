@@ -11,6 +11,10 @@ const navigationLinks = [
     href: "/",
     label: "Inicio",
   },
+ {
+    href: "/products",
+    label: "Productos",
+  },
   {
     href: "/categories",
     label: "Categorías",
@@ -59,6 +63,13 @@ export default function Navbar() {
   function isActiveLink(href) {
     if (href === "/") {
       return pathname === "/";
+    }
+
+    if (href === "/products") {
+      return (
+        pathname === "/products" ||
+        pathname.startsWith("/product/")
+      );
     }
 
     if (href === "/categories") {

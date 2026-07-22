@@ -17,3 +17,45 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+@keyframes mutuoCategoryFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+@keyframes mutuoCategoryBubble {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* Animaciones automáticas solamente en celular */
+@media (max-width: 767px) {
+  .mutuo-category-icon {
+    animation: mutuoCategoryFloat 3.4s ease-in-out infinite;
+  }
+
+  .mutuo-category-bubble {
+    animation: mutuoCategoryBubble 4s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-category-icon,
+  .mutuo-category-bubble {
+    animation: none;
+  }
+}

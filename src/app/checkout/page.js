@@ -982,14 +982,16 @@ export default function CheckoutPage() {
             </p>
           ) : null}
 
-          {createdOrder.payment.method ===
+{/* texto simulacion */}
+
+          {/* {createdOrder.payment.method ===
           "card" ? (
             <p className="mx-auto mt-8 max-w-2xl rounded-2xl bg-blue-50 p-5 text-sm text-blue-900">
               El pago con tarjeta fue una
               simulación académica. No se
               realizó ningún cobro real.
             </p>
-          ) : null}
+          ) : null} */}
 
           <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
           {shouldShowContactActions ? (
@@ -1738,11 +1740,11 @@ export default function CheckoutPage() {
                     </select>
                   </label>
 
-                  <p className="text-xs text-slate-500 sm:col-span-2">
+                  {/* <p className="text-xs text-slate-500 sm:col-span-2">
                     Es una simulación. Los
                     datos no se guardan y no
                     se realiza ningún cobro.
-                  </p>
+                  </p> */}
                 </div>
               ) : null}
             </div>

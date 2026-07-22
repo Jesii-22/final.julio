@@ -469,12 +469,99 @@ async function handlePaymentStatusUpdate() {
         </section>
 
         <div className="mt-6 text-center">
-          <Link
-            className="font-semibold text-blue-700 hover:underline"
-            href="/dashboard/orders"
-          >
-            Volver a órdenes
-          </Link>
+         <Link
+        className="inline-flex items-center font-semibold text-blue-700 transition hover:-translate-x-1 hover:text-orange-600"
+        href="/dashboard/orders"
+        >
+        ← Volver a órdenes
+        </Link>
+
+        <section className="mt-7 rounded-3xl border border-blue-100 bg-white px-6 py-9 shadow-lg shadow-blue-950/5 sm:px-10">
+        <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-start">
+            <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
+                Administración de orden
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+                <h1 className="text-4xl font-bold tracking-tight text-orange-600 sm:text-5xl">
+                Orden N.º {order.orderNumber}
+                </h1>
+
+                <span
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${status.className}`}
+                >
+                {status.label}
+                </span>
+            </div>
+
+            <p className="mt-4 leading-7 text-slate-600">
+                Creada el {formatDate(order.createdAt)}
+            </p>
+            </div>
+
+            <div className="w-full rounded-2xl border border-blue-100 bg-blue-50/40 p-5 lg:max-w-md">
+            <label>
+                <span className="mb-2 block text-sm font-semibold text-blue-700">
+                Cambiar estado de la orden
+                </span>
+
+                <select
+                className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                disabled={isSaving || isCanceled}
+                value={selectedStatus}
+                onChange={(event) => {
+                    setSelectedStatus(event.target.value);
+                    setSuccessMessage("");
+                    setError("");
+                }}
+                >
+                {STATUS_OPTIONS.map((option) => (
+                    <option
+                    key={option.value}
+                    value={option.value}
+                    >
+                    {option.label}
+                    </option>
+                ))}
+                </select>
+            </label>
+
+            <button
+                className="mt-4 w-full rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-500 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={
+                isSaving ||
+                isCanceled ||
+                selectedStatus === order.status
+                }
+                type="button"
+                onClick={handleStatusUpdate}
+            >
+                {isSaving
+                ? "Guardando..."
+                : "Guardar estado"}
+            </button>
+
+            {isCanceled ? (
+                <p className="mt-4 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+                La orden está cancelada y no puede volver a activarse.
+                </p>
+            ) : null}
+
+            {successMessage ? (
+                <p className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">
+                {successMessage}
+                </p>
+            ) : null}
+
+            {error && order ? (
+                <p className="mt-4 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+                {error}
+                </p>
+            ) : null}
+            </div>
+        </div>
+        </section>
         </div>
       </main>
     );
@@ -499,7 +586,8 @@ async function handlePaymentStatusUpdate() {
     order.status === "Canceled";
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
+    <main className="min-h-screen bg-slate-50 px-6 py-10 sm:py-16">
+        <div className="mx-auto w-full max-w-7xl">
       <Link
         className="font-semibold text-blue-700 hover:underline"
         href="/dashboard/orders"
@@ -608,8 +696,8 @@ async function handlePaymentStatusUpdate() {
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-950">
+          <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-md">
+            <h2 className="text-2xl font-bold text-orange-600">
               Productos
             </h2>
 
@@ -622,7 +710,7 @@ async function handlePaymentStatusUpdate() {
                   >
                     <div className="flex flex-col justify-between gap-4 sm:flex-row">
                       <div>
-                        <h3 className="text-lg font-bold text-slate-950">
+                        <h3 className="text-lg font-bold text-blue-700">
                           {product.name}
                         </h3>
 
@@ -677,8 +765,8 @@ async function handlePaymentStatusUpdate() {
           </section>
 
           <section className="grid gap-8 md:grid-cols-2">
-            <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-bold text-slate-950">
+            <article className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-md">
+              <h2 className="text-2xl font-bold text-orange-600">
                 Cliente
               </h2>
 
@@ -737,8 +825,8 @@ async function handlePaymentStatusUpdate() {
               ) : null}
             </article>
 
-            <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-bold text-slate-950">
+            <article className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-md">
+              <h2 className="text-2xl font-bold text-orange-600">
                 Entrega
               </h2>
 
@@ -798,8 +886,8 @@ async function handlePaymentStatusUpdate() {
           </section>
         </div>
 
-        <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-28">
-          <h2 className="text-2xl font-bold text-slate-950">
+        <aside className="h-fit rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-md lg:sticky lg:top-28">
+          <h2 className="text-2xl font-bold text-orange-600">
             Resumen
           </h2>
 
@@ -1087,8 +1175,8 @@ async function handlePaymentStatusUpdate() {
       </div>
     </section>
   </div>
-) : null}
-
-    </main>
-  );
+   ) : null}
+    </div>
+  </main>
+);
 }

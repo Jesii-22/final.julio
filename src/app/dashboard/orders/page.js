@@ -332,55 +332,56 @@ useEffect(() => {
   }, [orders]);
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
-      <Link
-        className="font-semibold text-blue-700 hover:underline"
+    <main className="min-h-screen bg-slate-50 px-6 py-10 sm:py-16">
+  <div className="mx-auto w-full max-w-7xl">
+        <Link
+        className="inline-flex items-center font-semibold text-blue-700 transition hover:-translate-x-1 hover:text-orange-600"
         href="/dashboard"
-      >
-        ← Volver al dashboard
-      </Link>
-
-      <div className="mt-6 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
-            Administración
-          </p>
-
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
-            Órdenes
-          </h1>
-
-          <p className="mt-3 text-slate-600">
-            Revisá las compras, entregas,
-            pagos y estados.
-          </p>
-        </div>
-
-        <button
-          className="rounded-xl border border-blue-300 bg-white px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-          disabled={isLoading}
-          type="button"
-          onClick={loadOrders}
         >
-          {isLoading
-            ? "Actualizando..."
-            : "Actualizar listado"}
-        </button>
-      </div>
+        ← Volver al dashboard
+        </Link>
+
+        <section className="mt-7 rounded-3xl border border-blue-100 bg-white px-6 py-9 shadow-lg shadow-blue-950/5 sm:px-10">
+        <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
+            <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
+                Administración
+            </p>
+
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-orange-600 sm:text-5xl">
+                Órdenes
+            </h1>
+
+            <p className="mt-4 max-w-2xl leading-7 text-slate-600">
+                Revisá las compras, entregas, medios de pago y estados de cada pedido
+                realizado en la tienda.
+            </p>
+            </div>
+
+            <button
+            className="inline-flex justify-center rounded-xl border border-blue-300 bg-white px-5 py-3 font-semibold text-blue-700 transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isLoading}
+            type="button"
+            onClick={loadOrders}
+            >
+            {isLoading
+                ? "Actualizando..."
+                : "Actualizar listado"}
+            </button>
+        </div>
+        </section>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">
           <p className="text-sm text-slate-500">
             Órdenes totales
           </p>
 
-          <p className="mt-2 text-3xl font-bold text-slate-950">
-            {orders.length}
+        <p className="mt-2 text-3xl font-bold text-blue-700">            {orders.length}
           </p>
         </article>
 
-        <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-          <p className="text-sm text-blue-700">
+        <article className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">          <p className="text-sm text-blue-700">
             Órdenes activas
           </p>
 
@@ -389,8 +390,7 @@ useEffect(() => {
           </p>
         </article>
 
-        <article className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
-          <p className="text-sm text-orange-700">
+        <article className="rounded-2xl border border-orange-200 bg-orange-50/70 p-5 transition duration-300 hover:-translate-y-1 hover:shadow-md">          <p className="text-sm text-orange-700">
             Enviadas
           </p>
 
@@ -399,19 +399,19 @@ useEffect(() => {
           </p>
         </article>
 
-        <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-          <p className="text-sm text-emerald-700">
+        <article className="rounded-2xl border border-blue-100 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">          
+            <p className="text-sm font-medium text-blue-700">
             Ventas registradas
           </p>
 
-          <p className="mt-2 text-2xl font-bold text-emerald-950">
+          <p className="mt-2 text-2xl font-bold text-orange-600">
             {formatPrice(
               statistics.registeredSales
             )}
           </p>
 
           {statistics.canceledOrders > 0 ? (
-            <p className="mt-2 text-xs text-emerald-800">
+            <p className="mt-2 text-xs text-slate-500">
               No incluye{" "}
               {statistics.canceledOrders}{" "}
               orden(es) cancelada(s).
@@ -420,7 +420,7 @@ useEffect(() => {
         </article>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="mt-8 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-md sm:p-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_240px]">
           <label>
             <span className="mb-2 block text-sm font-medium text-slate-700">
@@ -428,7 +428,7 @@ useEffect(() => {
             </span>
 
             <input
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               placeholder="Número, cliente, email o teléfono"
               value={search}
               onChange={(event) =>
@@ -445,7 +445,7 @@ useEffect(() => {
             </span>
 
             <select
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               value={statusFilter}
               onChange={(event) =>
                 setStatusFilter(
@@ -469,7 +469,7 @@ useEffect(() => {
       </section>
 
       {isLoading ? (
-        <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-600">
+        <section className="mt-8 rounded-3xl border border-blue-100 bg-white p-12 text-center text-slate-600">
           Cargando órdenes...
         </section>
       ) : null}
@@ -483,8 +483,8 @@ useEffect(() => {
       {!isLoading &&
       !error &&
       filteredOrders.length === 0 ? (
-        <section className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <h2 className="text-2xl font-bold text-slate-950">
+        <section className="mt-8 rounded-3xl border border-dashed border-blue-200 bg-white p-12 text-center">
+        <h2 className="text-2xl font-bold text-blue-700">
             No se encontraron órdenes
           </h2>
 
@@ -527,12 +527,12 @@ useEffect(() => {
               return (
                 <article
                   key={order._id}
-                  className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                  className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
                 >
                   <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="text-2xl font-bold text-slate-950">
+                        <h2 className="text-2xl font-bold text-orange-600">
                           Orden N.º{" "}
                           {order.orderNumber}
                         </h2>
@@ -628,6 +628,7 @@ useEffect(() => {
           )}
         </section>
       ) : null}
-    </main>
+    </div>
+  </main>
   );
 }

@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import ActionToast from "@/components/ActionToast";
+
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -43,6 +46,23 @@ function getPaymentLabel(method) {
 
   return labels[method] || method;
 }
+
+function getSelectableCardClass(
+  isSelected,
+  isDisabled = false
+) {
+  return `block w-full rounded-2xl border p-5 text-left transition duration-200 ${
+    isSelected
+      ? "border-orange-400 bg-orange-50 ring-2 ring-orange-100 shadow-md"
+      : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-sm"
+  } ${
+    isDisabled
+      ? "cursor-not-allowed opacity-50 active:scale-100"
+      : "cursor-pointer active:scale-[0.98]"
+  }`;
+}
+
+
 
 function getTodayInputValue() {
   const today = new Date();
@@ -119,71 +139,103 @@ export default function CheckoutPage() {
     const [createdOrder, setCreatedOrder] =
         useState(null);
 
-        useEffect(() => {
+      const [toast, setToast] = useState({
+        message: "",
+        type: "info",
+      });
+
+      const [
+        isToastVisible,
+        setIsToastVisible,
+      ] = useState(false);
+
+      const toastTimeoutRef = useRef(null);
+      const toastFrameRef = useRef(null);
+
+
+
+          useEffect(() => {
     let cancelled = false;
 
     async function loadUserProfile() {
-        if (!activeUser?._id) {
+      if (!activeUser?._id) {
         return;
-        }
+      }
 
-        try {
+      try {
         const response = await fetch(
-            `/api/users/${activeUser._id}`,
-            {
+          `/api/users/${activeUser._id}`,
+          {
             cache: "no-store",
-            }
+          }
         );
 
         const responseText =
-            await response.text();
+          await response.text();
 
         if (!responseText) {
-            return;
+          return;
         }
 
-        const data =
-            JSON.parse(responseText);
+        const data = JSON.parse(
+          responseText
+        );
 
         if (
-            !response.ok ||
-            !data.ok ||
-            cancelled
+          !response.ok ||
+          !data.ok ||
+          cancelled
         ) {
-            return;
+          return;
         }
 
         setCustomerData((current) => ({
-            ...current,
-            name: data.user.name || "",
-            lastName:
+          ...current,
+          name: data.user.name || "",
+          lastName:
             data.user.lastName || "",
-            email: data.user.email || "",
-            phone: data.user.phone || "",
+          email: data.user.email || "",
+          phone: data.user.phone || "",
         }));
 
         setDelivery((current) => ({
-            ...current,
-            address:
+          ...current,
+          address:
             data.user.address || "",
-            city: data.user.city || "",
-            postalCode:
+          city: data.user.city || "",
+          postalCode:
             data.user.postalCode || "",
         }));
-        } catch (error) {
+      } catch (error) {
         console.error(
-            "No se pudieron autocompletar los datos:",
-            error
+          "No se pudieron autocompletar los datos:",
+          error
         );
-        }
+      }
     }
 
     loadUserProfile();
 
     return () => {
-        cancelled = true;
+      cancelled = true;
     };
-    }, [activeUser?._id]);
+  }, [activeUser?._id]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        window.clearTimeout(
+          toastTimeoutRef.current
+        );
+      }
+
+      if (toastFrameRef.current) {
+        window.cancelAnimationFrame(
+          toastFrameRef.current
+        );
+      }
+    };
+  }, []);
 
   const discountPercentage =
     getDiscountPercentage(payment.method);
@@ -262,6 +314,41 @@ export default function CheckoutPage() {
         cartTotal
     );
 
+    function showToast(
+      toastMessage,
+      type = "info"
+    ) {
+      if (toastTimeoutRef.current) {
+        window.clearTimeout(
+          toastTimeoutRef.current
+        );
+      }
+
+      if (toastFrameRef.current) {
+        window.cancelAnimationFrame(
+          toastFrameRef.current
+        );
+      }
+
+      setToast({
+        message: toastMessage,
+        type,
+      });
+
+      setIsToastVisible(false);
+
+      toastFrameRef.current =
+        window.requestAnimationFrame(() => {
+          setIsToastVisible(true);
+        });
+
+      toastTimeoutRef.current =
+        window.setTimeout(() => {
+          setIsToastVisible(false);
+        }, 2800);
+    }
+
+
   function handleCustomerChange(event) {
     const { name, value } = event.target;
 
@@ -325,27 +412,33 @@ export default function CheckoutPage() {
     setMessage("");
   }
 
-  function handlePaymentMethodChange(
-    method
-  ) {
-    if (
-      method === "cash" &&
-      delivery.method === "shipping"
+      function handlePaymentMethodChange(
+      method
     ) {
-      setMessage(
-        "El efectivo está disponible únicamente para retiros o puntos de encuentro."
-      );
+      if (
+        method === "cash" &&
+        delivery.method === "shipping"
+      ) {
+        const errorMessage =
+          "El efectivo está disponible únicamente para retiros o puntos de encuentro.";
 
-      return;
+        setMessage(errorMessage);
+
+        showToast(
+          errorMessage,
+          "error"
+        );
+
+        return;
+      }
+
+      setPayment({
+        method,
+        installments: 1,
+      });
+
+      setMessage("");
     }
-
-    setPayment({
-      method,
-      installments: 1,
-    });
-
-    setMessage("");
-  }
 
   function handleCardChange(event) {
     const { name, value } = event.target;
@@ -372,28 +465,50 @@ export default function CheckoutPage() {
     });
 
     setMessage("");
+
+        showToast(
+      "Tarjeta de prueba completada.",
+      "info"
+    );
+
+
   }
 
-  function handleCalculateShipping() {
-    const postalCode =
-      delivery.postalCode.trim();
+      function handleCalculateShipping() {
+      const postalCode =
+        delivery.postalCode.trim();
 
-    if (!postalCode) {
-      setMessage(
-        "Ingresá un código postal para calcular el envío."
+      if (!postalCode) {
+        const errorMessage =
+          "Ingresá un código postal para calcular el envío.";
+
+        setMessage(errorMessage);
+
+        showToast(
+          errorMessage,
+          "error"
+        );
+
+        return;
+      }
+
+      const quote = calculateShippingCost({
+        postalCode,
+        subtotal: cartTotal,
+      });
+
+      setShippingQuote(quote);
+      setMessage("");
+
+      showToast(
+        quote.cost === 0
+          ? "Tu compra tiene envío gratis."
+          : `Envío calculado: ${formatPrice(
+              quote.cost
+            )}.`,
+        "success"
       );
-
-      return;
     }
-
-    const quote = calculateShippingCost({
-      postalCode,
-      subtotal: cartTotal,
-    });
-
-    setShippingQuote(quote);
-    setMessage("");
-  }
 
   function validateCard() {
     if (payment.method !== "card") {
@@ -569,8 +684,13 @@ export default function CheckoutPage() {
     setMessage("");
 
     if (!validateCheckout()) {
-      return;
-    }
+  showToast(
+    "Revisá los datos requeridos antes de confirmar la compra.",
+    "error"
+  );
+
+  return;
+}
 
     setIsCreatingOrder(true);
 
@@ -636,14 +756,21 @@ export default function CheckoutPage() {
               await response.text(),
           };
 
-      if (!response.ok || !data.ok) {
-        setMessage(
-          data.message ||
-            "No se pudo generar la orden."
-        );
 
-        return;
-      }
+        if (!response.ok || !data.ok) {
+          const errorMessage =
+            data.message ||
+            "No se pudo generar la orden.";
+
+          setMessage(errorMessage);
+
+          showToast(
+            errorMessage,
+            "error"
+          );
+
+          return;
+        }
 
       setCreatedOrder(data.order);
       clearCart();
@@ -653,9 +780,16 @@ export default function CheckoutPage() {
         error
       );
 
-      setMessage(
-        "Ocurrió un error al finalizar la compra."
+            const errorMessage =
+        "Ocurrió un error al finalizar la compra.";
+
+      setMessage(errorMessage);
+
+      showToast(
+        errorMessage,
+        "error"
       );
+
     } finally {
       setIsCreatingOrder(false);
     }
@@ -668,15 +802,21 @@ export default function CheckoutPage() {
     const emailUrl =
       createEmailUrl(createdOrder);
 
-    const isContactPayment = [
-      "cash",
-      "transfer",
-    ].includes(
-      createdOrder.payment.method
-    );
+    const needsPickupConfirmation =
+        createdOrder.delivery.method !==
+        "shipping";
 
-    return (
-      <main className="mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-6 py-16">
+    const needsTransferReceipt =
+        createdOrder.payment.method ===
+        "transfer";
+
+    const shouldShowContactActions =
+        needsPickupConfirmation ||
+        needsTransferReceipt;
+
+      return (
+        <main className="mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-6 py-16">
+    
         <section className="w-full rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-700">
             ✓
@@ -852,7 +992,7 @@ export default function CheckoutPage() {
           ) : null}
 
           <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-            {isContactPayment ? (
+          {shouldShowContactActions ? (
               <>
                 <a
                   className="rounded-xl bg-emerald-600 px-6 py-4 font-semibold text-white hover:bg-emerald-700"
@@ -860,20 +1000,18 @@ export default function CheckoutPage() {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  {createdOrder.payment
-                    .method === "cash"
-                    ? "Reconfirmar retiro por WhatsApp"
-                    : "Enviar comprobante por WhatsApp"}
+                  {needsTransferReceipt
+                  ? "Enviar comprobante por WhatsApp"
+                  : "Reconfirmar retiro por WhatsApp"}
                 </a>
 
                 <a
                   className="rounded-xl border border-blue-300 bg-white px-6 py-4 font-semibold text-blue-700 hover:bg-blue-50"
                   href={emailUrl}
                 >
-                  {createdOrder.payment
-                    .method === "cash"
-                    ? "Reconfirmar retiro por email"
-                    : "Enviar comprobante por email"}
+                  {needsTransferReceipt
+                    ? "Enviar comprobante por email"
+                    : "Reconfirmar retiro por email"}
                 </a>
               </>
             ) : null}
@@ -899,8 +1037,7 @@ export default function CheckoutPage() {
           </h1>
 
           <p className="mt-4 text-slate-600">
-            Agregá un producto antes de
-            continuar con la compra.
+            Agregá un producto antes de continuar con la compra.
           </p>
 
           <Link
@@ -915,7 +1052,14 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
+    <>
+      <ActionToast
+        message={toast.message}
+        type={toast.type}
+        visible={isToastVisible}
+      />
+
+      <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
           Finalizar compra
@@ -1040,13 +1184,10 @@ export default function CheckoutPage() {
             </h2>
 
             <div className="mt-6 space-y-4">
-              <label
-                className={`block cursor-pointer rounded-2xl border p-5 ${
-                  delivery.method ===
-                  "pickup_store"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200"
-                }`}
+             <label
+                className={getSelectableCardClass(
+                  delivery.method === "pickup_store"
+                )}
               >
                 <div className="flex gap-3">
                   <input
@@ -1094,19 +1235,16 @@ export default function CheckoutPage() {
               </label>
 
               <label
-                className={`block cursor-pointer rounded-2xl border p-5 ${
-                  delivery.method ===
-                  "pickup_point"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200"
-                }`}
-              >
+                  className={getSelectableCardClass(
+                    delivery.method === "pickup_point"
+                  )}
+                >
                 <div className="flex gap-3">
                   <input
                     checked={
                       delivery.method ===
                       "pickup_point"
-                    }
+                    }  
                     name="deliveryMethod"
                     type="radio"
                     onChange={() =>
@@ -1166,13 +1304,10 @@ export default function CheckoutPage() {
                 ) : null}
               </label>
 
-              <label
-                className={`block cursor-pointer rounded-2xl border p-5 ${
-                  delivery.method ===
-                  "shipping"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200"
-                }`}
+             <label
+                className={getSelectableCardClass(
+                  delivery.method === "shipping"
+                )}
               >
                 <div className="flex gap-3">
                   <input
@@ -1240,7 +1375,7 @@ export default function CheckoutPage() {
                       />
 
                       <button
-                        className="rounded-xl border border-blue-300 bg-white px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+                        className="rounded-xl border border-blue-300 bg-white px-5 py-3 font-semibold text-blue-700 transition duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:shadow-sm active:scale-[0.97]"
                         type="button"
                         onClick={
                           handleCalculateShipping
@@ -1369,16 +1504,10 @@ export default function CheckoutPage() {
 
             <div className="mt-6 grid gap-4">
               <button
-                className={`rounded-2xl border p-5 text-left ${
-                  payment.method === "cash"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200"
-                } ${
-                  delivery.method ===
-                  "shipping"
-                    ? "cursor-not-allowed opacity-50"
-                    : ""
-                }`}
+              className={getSelectableCardClass(
+                  payment.method === "cash",
+                  delivery.method === "shipping"
+                )}
                 disabled={
                   delivery.method ===
                   "shipping"
@@ -1401,12 +1530,9 @@ export default function CheckoutPage() {
               </button>
 
               <button
-                className={`rounded-2xl border p-5 text-left ${
-                  payment.method ===
-                  "transfer"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200"
-                }`}
+                className={getSelectableCardClass(
+                  payment.method === "transfer"
+                )}
                 type="button"
                 onClick={() =>
                   handlePaymentMethodChange(
@@ -1460,11 +1586,9 @@ export default function CheckoutPage() {
               ) : null}
 
               <button
-                className={`rounded-2xl border p-5 text-left ${
+                className={getSelectableCardClass(
                   payment.method === "card"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200"
-                }`}
+                )}
                 type="button"
                 onClick={() =>
                   handlePaymentMethodChange(
@@ -1491,7 +1615,7 @@ export default function CheckoutPage() {
                     </p>
 
                     <button
-                      className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                      className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:shadow-sm active:scale-[0.97]"
                       type="button"
                       onClick={fillTestCard}
                     >
@@ -1731,15 +1855,29 @@ export default function CheckoutPage() {
               </strong>
             </p>
           ) : null}
-
+ 
           <button
-            className="mt-7 w-full rounded-xl bg-blue-700 px-5 py-4 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-busy={isCreatingOrder}
+            className={`mt-7 w-full rounded-xl px-5 py-4 font-semibold text-white shadow-sm transition duration-200 disabled:cursor-wait ${
+              isCreatingOrder
+                ? "bg-orange-500 shadow-orange-900/10"
+                : "bg-blue-700 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-md active:scale-[0.98]"
+            }`}
             disabled={isCreatingOrder}
             type="submit"
           >
-            {isCreatingOrder
-              ? "Generando orden..."
-              : "Confirmar compra"}
+            {isCreatingOrder ? (
+              <span className="flex items-center justify-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                />
+
+                Generando orden...
+              </span>
+            ) : (
+              "Confirmar compra"
+            )}
           </button>
 
           {message ? (
@@ -1757,5 +1895,6 @@ export default function CheckoutPage() {
         </aside>
       </form>
     </main>
+  </>
   );
 }

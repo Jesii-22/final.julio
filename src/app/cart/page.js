@@ -81,7 +81,7 @@ export default function CartPage() {
         </div>
 
         <button
-          className="self-start rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+          className="self-start rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-sm active:scale-[0.97]"
           type="button"
           onClick={clearCart}
         >
@@ -94,7 +94,7 @@ export default function CartPage() {
           {cart.map((item) => (
             <article
               key={item.itemKey}
-              className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-[140px_1fr]"
+              className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:border-orange-200 hover:shadow-md sm:grid-cols-[140px_1fr]"
             >
               <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
                 {item.image ? (
@@ -157,7 +157,7 @@ export default function CartPage() {
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center overflow-hidden rounded-xl border border-slate-300">
                     <button
-                      className="h-11 w-11 text-lg font-semibold text-slate-700 hover:bg-slate-100"
+                      className="h-11 w-11 text-lg font-semibold text-slate-700 transition duration-150 hover:bg-blue-50 hover:text-blue-700 active:scale-90"
                       aria-label={`Disminuir cantidad de ${item.name}`}
                       type="button"
                       onClick={() =>
@@ -190,7 +190,7 @@ export default function CartPage() {
                   </div>
 
                   <button
-                    className="text-sm font-semibold text-red-700 hover:text-red-900"
+                    className="rounded-lg px-3 py-2 text-sm font-semibold text-red-700 transition duration-200 hover:bg-red-50 hover:text-red-900 active:scale-[0.96]"
                     type="button"
                     onClick={() => removeFromCart(item.itemKey)}
                   >
@@ -235,15 +235,14 @@ export default function CartPage() {
           </div>
 
           <Link
-            className="mt-7 flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-4 font-semibold text-white hover:bg-blue-800"
+            className="mt-7 flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-4 font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-md active:scale-[0.98]"
             href="/checkout"
           >
             Continuar al checkout
           </Link>
 
           <Link
-            className="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            href="/"
+            className="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 active:scale-[0.98]"            href="/"
           >
             Seguir comprando
           </Link>

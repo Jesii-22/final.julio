@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 
 import {
   DISCOUNT_PERCENTAGE,
@@ -19,32 +20,19 @@ function formatPrice(price) {
   }).format(Number(price) || 0);
 }
 
-export default function CommerceBenefitsBar() {
-  const [
-    isFloating,
-    setIsFloating,
-  ] = useState(false);
+function BenefitsBarContent() {
+  const [isFloating, setIsFloating] =
+    useState(false);
 
-  const [
-    isLeaving,
-    setIsLeaving,
-  ] = useState(false);
+  const [isLeaving, setIsLeaving] =
+    useState(false);
 
-  const hasAnimatedRef =
-    useRef(false);
-
-  const hideTimeoutRef =
-    useRef(null);
-
-  const returnTimeoutRef =
-    useRef(null);
+  const hasAnimatedRef = useRef(false);
+  const hideTimeoutRef = useRef(null);
+  const returnTimeoutRef = useRef(null);
 
   useEffect(() => {
     function handleScroll() {
-      /*
-        La animación se ejecuta una sola
-        vez y después de bajar un poco.
-      */
       if (
         hasAnimatedRef.current ||
         window.scrollY < 180
@@ -57,19 +45,11 @@ export default function CommerceBenefitsBar() {
       setIsFloating(true);
       setIsLeaving(false);
 
-      /*
-        Después de cuatro segundos
-        comienza a desaparecer.
-      */
       hideTimeoutRef.current =
         window.setTimeout(() => {
           setIsLeaving(true);
         }, 4000);
 
-      /*
-        Medio segundo después vuelve
-        a su posición original.
-      */
       returnTimeoutRef.current =
         window.setTimeout(() => {
           setIsFloating(false);
@@ -84,8 +64,6 @@ export default function CommerceBenefitsBar() {
         passive: true,
       }
     );
-
-    handleScroll();
 
     return () => {
       window.removeEventListener(
@@ -108,11 +86,11 @@ export default function CommerceBenefitsBar() {
   }, []);
 
   return (
-    <div className="min-h-86px sm:min-h-49px">
+    <div className="min-h-126px sm:min-h-49px">
       <section
         className={`border-orange-200 bg-orange-50 transition-all duration-500 ${
           isFloating
-            ? `fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 rounded-2xl border shadow-2xl shadow-slate-950/20 sm:bottom-auto sm:top-24 ${
+            ? `fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 rounded-2xl border shadow-2xl shadow-slate-950/20 sm:bottom-auto sm:top-24 ${
                 isLeaving
                   ? "translate-y-2 opacity-0"
                   : "translate-y-0 opacity-100"
@@ -120,7 +98,7 @@ export default function CommerceBenefitsBar() {
             : "relative w-full border-b"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-2 px-6 py-3 text-center text-sm sm:flex-row sm:gap-8 sm:text-base">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-2 px-6 py-3 text-center text-sm sm:flex-row sm:gap-6">
           <p className="font-semibold text-slate-900">
             <span
               aria-hidden="true"
@@ -132,8 +110,7 @@ export default function CommerceBenefitsBar() {
             <span className="text-orange-600">
               {DISCOUNT_PERCENTAGE}% OFF
             </span>{" "}
-            pagando en efectivo o
-            transferencia
+            en efectivo o transferencia
           </p>
 
           <span className="hidden h-5 w-px bg-orange-300 sm:block" />
@@ -153,8 +130,44 @@ export default function CommerceBenefitsBar() {
               )}
             </span>
           </p>
+
+          <span className="hidden h-5 w-px bg-orange-300 sm:block" />
+
+          <p className="font-semibold text-slate-900">
+            <span
+              aria-hidden="true"
+              className="mr-2 text-orange-500"
+            >
+              ✦
+            </span>
+
+            <span className="text-orange-600">
+              3 cuotas
+            </span>{" "}
+            sin interés
+          </p>
         </div>
       </section>
     </div>
+  );
+}
+
+export default function CommerceBenefitsBar() {
+  const pathname = usePathname();
+
+  const shouldShow =
+    pathname === "/" ||
+    pathname === "/categories" ||
+    pathname === "/favorites" ||
+    pathname === "/cart" ||
+    pathname.startsWith("/category/") ||
+    pathname.startsWith("/product/");
+
+  if (!shouldShow) {
+    return null;
+  }
+
+  return (
+    <BenefitsBarContent key={pathname} />
   );
 }

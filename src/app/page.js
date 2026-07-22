@@ -1,4 +1,3 @@
-import CommerceBenefitsBar from "@/components/CommerceBenefitsBar";
 import HomeHero from "@/components/HomeHero";
 import ProductGrid from "@/components/ProductGrid";
 import { getProducts } from "@/lib/products";
@@ -10,7 +9,7 @@ export default async function Home() {
 
   return (
     <>
-      <CommerceBenefitsBar />
+    
 
       <HomeHero />
 

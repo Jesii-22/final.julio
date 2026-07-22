@@ -32,7 +32,42 @@ function BenefitsBarContent() {
   const returnTimeoutRef = useRef(null);
 
   useEffect(() => {
+    const desktopQuery = window.matchMedia(
+      "(min-width: 768px)"
+    );
+
+    function clearTimers() {
+      if (hideTimeoutRef.current) {
+        window.clearTimeout(
+          hideTimeoutRef.current
+        );
+      }
+
+      if (returnTimeoutRef.current) {
+        window.clearTimeout(
+          returnTimeoutRef.current
+        );
+      }
+    }
+
+    function resetAnimation() {
+      clearTimers();
+
+      hasAnimatedRef.current = false;
+
+      setIsFloating(false);
+      setIsLeaving(false);
+    }
+
     function handleScroll() {
+      /*
+        En celular la barra siempre queda
+        fija en su posición normal.
+      */
+      if (!desktopQuery.matches) {
+        return;
+      }
+
       if (
         hasAnimatedRef.current ||
         window.scrollY < 180
@@ -57,6 +92,12 @@ function BenefitsBarContent() {
         }, 4500);
     }
 
+    function handleScreenChange(event) {
+      if (!event.matches) {
+        resetAnimation();
+      }
+    }
+
     window.addEventListener(
       "scroll",
       handleScroll,
@@ -65,32 +106,32 @@ function BenefitsBarContent() {
       }
     );
 
+    desktopQuery.addEventListener(
+      "change",
+      handleScreenChange
+    );
+
     return () => {
       window.removeEventListener(
         "scroll",
         handleScroll
       );
 
-      if (hideTimeoutRef.current) {
-        window.clearTimeout(
-          hideTimeoutRef.current
-        );
-      }
+      desktopQuery.removeEventListener(
+        "change",
+        handleScreenChange
+      );
 
-      if (returnTimeoutRef.current) {
-        window.clearTimeout(
-          returnTimeoutRef.current
-        );
-      }
+      clearTimers();
     };
   }, []);
 
   return (
-    <div className="min-h-126px sm:min-h-49px">
+    <div className="min-h-118px md:min-h-49px">
       <section
         className={`border-orange-200 bg-orange-50 transition-all duration-500 ${
           isFloating
-            ? `fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 rounded-2xl border shadow-2xl shadow-slate-950/20 sm:bottom-auto sm:top-24 ${
+            ? `fixed left-1/2 top-24 z-40 w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 rounded-2xl border shadow-2xl shadow-slate-950/20 ${
                 isLeaving
                   ? "translate-y-2 opacity-0"
                   : "translate-y-0 opacity-100"
@@ -98,7 +139,7 @@ function BenefitsBarContent() {
             : "relative w-full border-b"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-2 px-6 py-3 text-center text-sm sm:flex-row sm:gap-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-1.5 px-4 py-3 text-center text-xs sm:text-sm md:flex-row md:gap-6 md:px-6 md:text-base">
           <p className="font-semibold text-slate-900">
             <span
               aria-hidden="true"
@@ -113,7 +154,7 @@ function BenefitsBarContent() {
             en efectivo o transferencia
           </p>
 
-          <span className="hidden h-5 w-px bg-orange-300 sm:block" />
+          <span className="hidden h-5 w-px bg-orange-300 md:block" />
 
           <p className="font-semibold text-slate-900">
             <span
@@ -131,7 +172,7 @@ function BenefitsBarContent() {
             </span>
           </p>
 
-          <span className="hidden h-5 w-px bg-orange-300 sm:block" />
+          <span className="hidden h-5 w-px bg-orange-300 md:block" />
 
           <p className="font-semibold text-slate-900">
             <span

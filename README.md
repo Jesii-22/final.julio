@@ -4,15 +4,13 @@ Mutuo es un ecommerce de objetos funcionales para el hogar, diseñados e impreso
 
 El proyecto busca combinar orden, practicidad y una estética simple mediante productos personalizables para distintos espacios cotidianos.
 
-## Demo
+## Aplicación publicada
 
-Aplicación publicada:
+[Ver proyecto en Vercel](https://final-julio-h99x-alpha.vercel.app/)
 
-> Vercel (https://final-julio-h99x-alpha.vercel.app/)
+## Repositorio
 
-Repositorio:
-
-> https://github.com/Jesii-22/final.julio
+[Ver repositorio en GitHub](https://github.com/Jesii-22/final.julio)
 
 ## Autora
 
@@ -28,10 +26,10 @@ Programación III — 2026
 - React
 - JavaScript
 - Tailwind CSS
-- MongoDB
+- MongoDB Atlas
 - Mongoose
 - Context API
-- API Routes
+- Route Handlers de Next.js
 - Vercel
 
 ## Funcionalidades principales
@@ -82,7 +80,7 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 
 - Registro de usuarios.
 - Inicio y cierre de sesión.
-- Persistencia de usuarios en MongoDB.
+- Persistencia de usuarios en MongoDB Atlas.
 - Perfil del usuario.
 - Historial de compras.
 - Detalle individual de cada orden.
@@ -107,25 +105,29 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 - Estado del pago.
 - Contacto por WhatsApp o email para comprobantes y retiros.
 
-> integración de tarjeta es una simulación académica. 
+> La integración de tarjeta es una simulación académica y no procesa pagos reales.
 
 ### Órdenes
 
-- Creación y persistencia de órdenes en MongoDB.
+- Creación y persistencia de órdenes en MongoDB Atlas.
 - Número de orden secuencial.
 - Snapshot de los productos comprados.
 - Registro de precios, cantidades y personalizaciones.
 - Descuento automático de stock.
 - Restauración de stock cuando una orden es cancelada.
-- Estados de la orden:
-  - Recibida o activa (`Active`).
-  - Finalizada (`Closed`).
-  - Enviada (`Shipped`).
-  - Cancelada (`Canceled`).
-- Estados del pago:
-  - Pendiente (`Pending`).
-  - Pagado (`Paid`).
-  - Rechazado (`Rejected`).
+
+Estados de la orden:
+
+- Recibida o activa (`Active`).
+- Finalizada (`Closed`).
+- Enviada (`Shipped`).
+- Cancelada (`Canceled`).
+
+Estados del pago:
+
+- Pendiente (`Pending`).
+- Pagado (`Paid`).
+- Rechazado (`Rejected`).
 
 ### Dashboard administrativo
 
@@ -148,7 +150,6 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 3. Búsqueda de productos.
 4. Filtros por categoría y disponibilidad.
 5. Autorización para el área administrativa.
-6. Metadatos básicos para SEO.
 
 ## Rutas principales
 
@@ -166,32 +167,29 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 /login
 /register
 
+Usuario registrado
+/user
+/user/profile
+/user/order/[id]
+
+Administración 
+/dashboard
+/dashboard/products
+/dashboard/orders
+/dashboard/order/[id]
 
 Uso de inteligencia artificial
+
 Consentimiento
 
-Declaro que utilicé herramientas de inteligencia artificial como apoyo durante el desarrollo de este trabajo práctico.
+Declaro que utilicé herramientas de inteligencia artificial como apoyo durante el desarrollo del trabajo práctico.
 
-Su utilización incluyó asistencia para comprender requerimientos, revisar código, detectar errores, analizar posibles soluciones, mejorar textos, explorar alternativas de diseño y generar o editar recursos visuales para los productos.
+La utilización incluyó asistencia para comprender requerimientos, revisar código, detectar errores, analizar posibles soluciones, mejorar textos, explorar alternativas de diseño y generar o editar recursos visuales para los productos.
 
-El código, las decisiones de implementación y las pruebas del funcionamiento fueron revisados e integrados dentro del proyecto de manera consciente.
+El código, las decisiones de implementación y las pruebas de funcionamiento fueron revisadas e integradas dentro del proyecto de manera consciente.
 
 Reflexión
 
-El uso de inteligencia artificial fue útil para ordenar un proyecto de gran extensión y comprender de manera más clara la relación entre las distintas partes del ecommerce.
+El uso de inteligencia artificial fue útil para ordenar un proyecto y comprender de manera más clara la relación entre las distintas partes del ecommerce.
 
-La IA funcionó principalmente como una herramienta de acompañamiento para explicar conceptos, proponer estructuras, detectar errores de sintaxis y brindar alternativas ante problemas técnicos. También permitió mejorar la presentación visual y textual de la marca.
-
-Durante el proceso fue necesario revisar las respuestas, adaptar el código a la estructura real del proyecto y realizar pruebas manuales para comprobar que cada funcionalidad trabajara correctamente. Esto permitió entender que la herramienta no reemplaza el conocimiento ni la toma de decisiones, sino que requiere análisis, validación y criterio por parte de quien desarrolla.
-
-Estado del proyecto
-ESLint: aprobado.
-Build de producción: aprobado.
-CRUD de productos y categorías: funcional.
-Registro e inicio de sesión: funcional.
-Favoritos: funcional.
-Carrito y checkout: funcional.
-Creación de órdenes: funcional.
-Dashboard administrativo: funcional.
-Responsive: funcional.
-Despliegue en Vercel: pendiente.
+funcionó como una herramienta para acompañamiento, para explicarme conceptos, proponener estructuras, detectar errores y brindar alternativas ante problemas técnicos. También me permitio mejorar la presentación visual y textual de la marca.

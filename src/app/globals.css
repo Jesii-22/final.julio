@@ -59,3 +59,139 @@ body {
     animation: none;
   }
 }
+
+@keyframes mutuoNavbarPhrase {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.mutuo-navbar-phrase {
+  animation: mutuoNavbarPhrase 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-navbar-phrase {
+    animation: none;
+  }
+}
+
+@keyframes mutuoNavbarPhrase {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.mutuo-navbar-phrase {
+  animation: mutuoNavbarPhrase 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-navbar-phrase {
+    animation: none;
+  }
+}
+
+@keyframes mutuoFunctionalWord {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translateY(0);
+    text-shadow: 0 0 0 transparent;
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+    text-shadow: 0 0 8px rgb(37 99 235 / 35%);
+  }
+}
+
+.mutuo-functional-word {
+  display: inline-block;
+  animation: mutuoFunctionalWord 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-functional-word {
+    animation: none;
+  }
+}
+
+
+@keyframes mutuoCartHeadingEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mutuo-cart-heading {
+  animation: mutuoCartHeadingEnter 0.55s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-cart-heading {
+    animation: none;
+  }
+}
+
+@keyframes mutuoEmptyCartEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mutuoEmptyCartItemEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mutuo-empty-cart {
+  animation: mutuoEmptyCartEnter 0.55s ease-out both;
+}
+
+.mutuo-empty-cart-item {
+  opacity: 0;
+  animation: mutuoEmptyCartItemEnter 0.5s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-empty-cart,
+  .mutuo-empty-cart-item {
+    opacity: 1;
+    animation: none;
+  }
+}

@@ -32,36 +32,42 @@ export default function FavoritesPage() {
     activeUser,
   } = useGlobalContext();
 
-  if (favorites.length === 0) {
-    return (
-      <main className="min-h-screen bg-slate-50 px-6 py-16">
-        <div className="mx-auto flex min-h-[60vh] w-full max-w-6xl items-center justify-center">
-          <section className="w-full max-w-xl rounded-3xl border border-dashed border-blue-200 bg-white p-10 text-center shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
-              Tus favoritos
-            </p>
+      if (favorites.length === 0) {
+      return (
+        <main className="min-h-screen bg-slate-50 px-6 py-16">
+          <div className="mx-auto flex min-h-[60vh] w-full max-w-6xl items-center justify-center">
+            <section className="mutuo-empty-cart w-full max-w-xl rounded-3xl border border-dashed border-blue-200 bg-white p-10 text-center shadow-sm">
+              <p className="mutuo-empty-cart-item text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
+                Tus favoritos
+              </p>
 
-            <h1 className="mt-3 text-3xl font-bold text-blue-700">
-              Todavía no guardaste productos
-            </h1>
+              <h1
+                className="mutuo-empty-cart-item mt-4 text-3xl font-bold tracking-tight text-blue-700 sm:text-4xl"
+                style={{ animationDelay: "0.12s" }}
+              >
+                Todavía no guardaste productos
+              </h1>
 
-            <p className="mt-4 leading-7 text-slate-600">
-              Marcá los objetos de Mutuo que
-              más te gusten para encontrarlos
-              fácilmente acá.
-            </p>
+              <p
+                className="mutuo-empty-cart-item mt-4 leading-7 text-slate-600"
+                style={{ animationDelay: "0.22s" }}
+              >
+                Marcá los objetos de Mutuo que más te gusten para
+                encontrarlos fácilmente acá.
+              </p>
 
-            <Link
-              className="mt-7 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600"
-              href="/"
-            >
-              Explorar productos
-            </Link>
-          </section>
-        </div>
-      </main>
-    );
-  }
+              <Link
+                className="mutuo-empty-cart-item mt-7 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md active:scale-[0.97]"
+                href="/products"
+                style={{ animationDelay: "0.32s" }}
+              >
+                Explorar productos
+              </Link>
+            </section>
+          </div>
+        </main>
+      );
+    }
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 sm:py-16">

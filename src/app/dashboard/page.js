@@ -67,12 +67,12 @@ export default function DashboardPage() {
             </p>
 
             <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-orange-600 sm:text-5xl">
-              Gestioná tu ecommerce desde un solo lugar
+              Gestioná tu ecommerce 
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
               Administrá el catálogo, las categorías, el stock y las órdenes
-              de compra de los productos de Mutuo.
+              de compra de los productos.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -108,20 +109,35 @@ export default function Navbar() {
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <Link
-            className="inline-flex items-center text-2xl font-bold tracking-tight text-blue-700 transition hover:text-orange-600"
+            aria-label="Ir al inicio de Mutuo"
+            className="inline-flex items-center transition duration-200 hover:scale-[1.03] active:scale-[0.97]"
             href="/"
             onClick={closeMenu}
           >
-            mutuo
-            <span className="text-orange-500">
-              .
-            </span>
+            <Image
+              alt="Mutuo"
+              className="h-10 w-auto object-contain sm:h-12"
+              height={240}
+              priority
+              src="/images/logo-mutuo.png"
+              width={800}
+            />
           </Link>
 
           <span className="hidden h-5 w-px bg-blue-200 lg:block" />
 
-          <p className="hidden text-xs text-slate-500 lg:block">
-            Objetos funcionales para el hogar
+          <p className="mutuo-navbar-phrase hidden items-center gap-1 font-mono text-[9px] font-medium uppercase tracking-[0.14em] lg:flex">
+              <span className="text-orange-500">
+                Objetos
+              </span>
+
+              <span className="mutuo-functional-word text-blue-700">
+                funcionales
+              </span>
+
+              <span className="text-orange-500">
+                para el hogar
+              </span>
           </p>
         </div>
 

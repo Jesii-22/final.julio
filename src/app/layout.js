@@ -1,8 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 
 import CommerceBenefitsBar from "@/components/CommerceBenefitsBar";
+import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { GlobalProvider } from "@/context/GlobalContext";
+
 
 import "./globals.css";
 
@@ -35,8 +37,10 @@ export default function RootLayout({ children }) {
           <CommerceBenefitsBar />
 
           <main className="flex-1">
-            {children}
-          </main>
+              {children}
+            </main>
+
+            <Footer />
         </GlobalProvider>
       </body>
     </html>

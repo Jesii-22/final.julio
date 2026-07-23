@@ -34,33 +34,40 @@ export default function CartPage() {
     clearCart,
   } = useGlobalContext();
 
-  if (cart.length === 0) {
-    return (
-      <main className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-6 py-16">
-        <section className="w-full max-w-xl rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
-            Tu carrito
-          </p>
+      if (cart.length === 0) {
+      return (
+        <main className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-6 py-16">
+          <section className="mutuo-empty-cart w-full max-w-xl rounded-3xl border border-dashed border-blue-200 bg-white p-10 text-center shadow-sm">
+            <h1 className="mutuo-empty-cart-item text-4xl font-bold tracking-tight text-blue-800 sm:text-5xl">
+              Tu carrito
+            </h1>
 
-          <h1 className="mt-3 text-3xl font-bold text-slate-950">
-            Todavía no agregaste productos
-          </h1>
+            <h2
+              className="mutuo-empty-cart-item mt-4 text-3xl font-bold text-orange-600"
+              style={{ animationDelay: "0.12s" }}
+            >
+              Todavía no agregaste productos
+            </h2>
 
-          <p className="mt-4 text-slate-600">
-            Explorá los productos de Mutuo, elegí sus
-            customizaciones y agregalos al carrito.
-          </p>
+            <p
+              className="mutuo-empty-cart-item mt-4 leading-7 text-slate-600"
+              style={{ animationDelay: "0.22s" }}
+            >
+              Explorá los productos de Mutuo, elegí sus
+              personalizaciones y agregalos al carrito.
+            </p>
 
-          <Link
-            className="mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
-            href="/"
-          >
-            Ver productos
-          </Link>
-        </section>
-      </main>
-    );
-  }
+            <Link
+              className="mutuo-empty-cart-item mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-md active:scale-[0.97]"
+              href="/products"
+              style={{ animationDelay: "0.32s" }}
+            >
+              Ver productos
+            </Link>
+          </section>
+        </main>
+      );
+    }
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-16">
@@ -70,7 +77,7 @@ export default function CartPage() {
             Mutuo
           </p>
 
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
+          <h1 className="mutuo-cart-heading mt-3 text-4xl font-bold tracking-tight text-blue-800 sm:text-5xl">
             Tu carrito
           </h1>
 
@@ -203,7 +210,7 @@ export default function CartPage() {
         </section>
 
         <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-28">
-          <h2 className="text-2xl font-bold text-slate-950">
+          <h2 className="mutuo-cart-heading text-2xl font-bold tracking-tight text-blue-800 sm:text-3xl">
             Resumen
           </h2>
 

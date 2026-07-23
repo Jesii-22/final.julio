@@ -8,7 +8,7 @@ El proyecto busca combinar orden, practicidad y una estética simple mediante pr
 
 Aplicación publicada:
 
-> PENDIENTE: agregar enlace de Vercel
+> Vercel (https://final-julio-h99x-alpha.vercel.app/)
 
 Repositorio:
 
@@ -135,8 +135,8 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 - Total vendido durante el mes.
 - Últimos usuarios registrados.
 - Productos con stock bajo.
-- CRUD de productos.
-- CRUD de categorías.
+- Gestión completa de productos: crear, listar, editar y eliminar.
+- Gestión completa de categorías: crear, listar, editar y eliminar.
 - Administración de órdenes.
 - Cambio de estado de orden.
 - Cambio de estado de pago.

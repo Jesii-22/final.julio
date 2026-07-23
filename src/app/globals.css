@@ -195,3 +195,63 @@ body {
     animation: none;
   }
 }
+
+@keyframes mutuoFreeShippingEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mutuoFreeShippingProgress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes mutuoFreeShippingIcon {
+  0% {
+    opacity: 0;
+    transform: rotate(-20deg) scale(0.6);
+  }
+
+  60% {
+    transform: rotate(10deg) scale(1.2);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
+.mutuo-free-shipping-box {
+  animation: mutuoFreeShippingEnter 0.5s ease-out both;
+}
+
+.mutuo-free-shipping-progress {
+  transform-origin: left;
+  animation: mutuoFreeShippingProgress 0.9s ease-out 0.25s both;
+}
+
+.mutuo-free-shipping-icon {
+  display: inline-block;
+  animation: mutuoFreeShippingIcon 0.6s ease-out 0.35s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mutuo-free-shipping-box,
+  .mutuo-free-shipping-progress,
+  .mutuo-free-shipping-icon {
+    animation: none;
+  }
+}

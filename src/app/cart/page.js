@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useGlobalContext } from "@/context/GlobalContext";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/commerce";
 
 function getProductImageSrc(image) {
   if (!image) {
@@ -33,6 +34,18 @@ export default function CartPage() {
     removeFromCart,
     clearCart,
   } = useGlobalContext();
+
+
+      const amountForFreeShipping = Math.max(
+      FREE_SHIPPING_THRESHOLD - cartTotal,
+      0
+    );
+
+    const freeShippingProgress = Math.min(
+      (cartTotal / FREE_SHIPPING_THRESHOLD) * 100,
+      100
+    );
+
 
       if (cart.length === 0) {
       return (
@@ -241,6 +254,53 @@ export default function CartPage() {
             </p>
           </div>
 
+            {cartTotal >= FREE_SHIPPING_THRESHOLD ? (
+<div className="mutuo-free-shipping-box mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">    <p className="text-sm font-bold text-emerald-800">
+      ✓ Tu compra tiene envío gratis
+    </p>
+
+    <p className="mt-1 text-xs leading-5 text-emerald-700">
+      Superaste el mínimo de{" "}
+      {formatPrice(FREE_SHIPPING_THRESHOLD)}.
+    </p>
+
+    <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100">
+  <div className="mutuo-free-shipping-progress h-full w-full rounded-full bg-emerald-500" />    </div>
+  </div>
+) : (
+<div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4">    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-sm font-bold text-orange-800">
+          Estás cerca del envío gratis
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-orange-700">
+          Te faltan{" "}
+          <strong>
+            {formatPrice(amountForFreeShipping)}
+          </strong>{" "}
+          para alcanzarlo.
+        </p>
+      </div>
+
+      <span className="mutuo-free-shipping-icon shrink-0 text-lg">
+        ✦
+      </span>
+    </div>
+
+    <div className="mt-3 h-2 overflow-hidden rounded-full bg-orange-100">
+      <div
+      className="mutuo-free-shipping-progress h-full rounded-full bg-orange-500"        style={{
+          width: `${freeShippingProgress}%`,
+        }}
+      />
+    </div>
+
+    <p className="mt-2 text-right text-[11px] font-semibold text-orange-700">
+        {Math.round(freeShippingProgress)}% alcanzado
+      </p>
+    </div>
+)}
           <Link
             className="mt-7 flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-4 font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-md active:scale-[0.98]"
             href="/checkout"
@@ -249,7 +309,8 @@ export default function CartPage() {
           </Link>
 
           <Link
-            className="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 active:scale-[0.98]"            href="/"
+            className="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 active:scale-[0.98]"            
+            href="/products"
           >
             Seguir comprando
           </Link>

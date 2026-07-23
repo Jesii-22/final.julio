@@ -117,15 +117,15 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 - Registro de precios, cantidades y personalizaciones.
 - Descuento automático de stock.
 - Restauración de stock cuando una orden es cancelada.
-- Estados de orden:
-  - Active
-  - Closed
-  - Shipped
-  - Canceled
-- Estados de pago:
-  - Pending
-  - Paid
-  - Rejected
+- Estados de la orden:
+  - Recibida o activa (`Active`).
+  - Finalizada (`Closed`).
+  - Enviada (`Shipped`).
+  - Cancelada (`Canceled`).
+- Estados del pago:
+  - Pendiente (`Pending`).
+  - Pagado (`Paid`).
+  - Rechazado (`Rejected`).
 
 ### Dashboard administrativo
 
@@ -165,3 +165,33 @@ Un mismo producto agregado con distintas personalizaciones se guarda como un art
 /checkout
 /login
 /register
+
+
+Uso de inteligencia artificial
+Consentimiento
+
+Declaro que utilicé herramientas de inteligencia artificial como apoyo durante el desarrollo de este trabajo práctico.
+
+Su utilización incluyó asistencia para comprender requerimientos, revisar código, detectar errores, analizar posibles soluciones, mejorar textos, explorar alternativas de diseño y generar o editar recursos visuales para los productos.
+
+El código, las decisiones de implementación y las pruebas del funcionamiento fueron revisados e integrados dentro del proyecto de manera consciente.
+
+Reflexión
+
+El uso de inteligencia artificial fue útil para ordenar un proyecto de gran extensión y comprender de manera más clara la relación entre las distintas partes del ecommerce.
+
+La IA funcionó principalmente como una herramienta de acompañamiento para explicar conceptos, proponer estructuras, detectar errores de sintaxis y brindar alternativas ante problemas técnicos. También permitió mejorar la presentación visual y textual de la marca.
+
+Durante el proceso fue necesario revisar las respuestas, adaptar el código a la estructura real del proyecto y realizar pruebas manuales para comprobar que cada funcionalidad trabajara correctamente. Esto permitió entender que la herramienta no reemplaza el conocimiento ni la toma de decisiones, sino que requiere análisis, validación y criterio por parte de quien desarrolla.
+
+Estado del proyecto
+ESLint: aprobado.
+Build de producción: aprobado.
+CRUD de productos y categorías: funcional.
+Registro e inicio de sesión: funcional.
+Favoritos: funcional.
+Carrito y checkout: funcional.
+Creación de órdenes: funcional.
+Dashboard administrativo: funcional.
+Responsive: funcional.
+Despliegue en Vercel: pendiente.
